@@ -22,7 +22,7 @@ Dibangun dengan prinsip desain "kertas tanda terima & tinta biru blueprint" — 
 12. [Konfigurasi Kontak Bengkel](#konfigurasi-kontak-bengkel)
 13. [Menjalankan Test](#menjalankan-test)
 14. [Troubleshooting](#troubleshooting)
-15. [Mode Demo](#mode-demo)
+15. [Lingkungan (APP_ENV)](#lingkungan-app_env)
 
 ---
 
@@ -368,11 +368,10 @@ Test mencakup: root `/` redirect ke portal tracking, dan render halaman-halaman 
 
 ---
 
-## Mode Demo
+## Lingkungan (APP_ENV)
 
-- Chip **"Contoh Data Uji"** di portal `/track` hanya tampil ketika `APP_ENV=local` (default `.env` proyek ini). Selama demo, biarkan `local` agar pengunjung demo bisa 1-klik data contoh dari HP-nya.
-- **Sebelum aplikasi dipakai bengkel sungguhan**, ganti di `.env`: `APP_ENV=production`, `APP_DEBUG=false`, lalu `php artisan config:clear` — chip demo hilang otomatis dan pesan error tidak lagi menampilkan stack trace.
-- Skenario demo 3 menit tersedia di `PANDUAN_DEMO.md`.
+- Chip **"Contoh Data Uji"** di portal `/track` hanya tampil ketika `APP_ENV=local` (default `.env` proyek ini).
+- **Sebelum aplikasi dipakai bengkel sungguhan**, ganti di `.env`: `APP_ENV=production`, `APP_DEBUG=false`, lalu `php artisan config:clear` — chip data uji hilang otomatis dan pesan error tidak lagi menampilkan stack trace.
 
 ---
 
