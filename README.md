@@ -1,6 +1,6 @@
 # Tracket
 
-Sistem manajemen bengkel servis elektronik (smartphone, laptop, & perangkat lainnya) untuk **Sertifikasi Kompetensi BNSP**, bidang Keahlian Pemrograman Web / Software Development. Mencakup penerimaan unit (check-in), alur pengerjaan teknisi, suku cadang transaksional dengan rollback stok, aktivasi garansi, dokumen cetak resmi (tanda terima & faktur + kartu garansi), serta portal pelacakan publik tanpa login.
+Sistem manajemen bengkel servis elektronik (smartphone, laptop, & perangkat lainnya): penerimaan unit (check-in), alur pengerjaan teknisi, suku cadang transaksional dengan rollback stok, aktivasi garansi, dokumen cetak resmi (tanda terima & faktur + kartu garansi), serta portal pelacakan publik tanpa login.
 
 Dibangun dengan prinsip desain "kertas tanda terima & tinta biru blueprint" — fungsional, padat informasi, tanpa elemen dekoratif generik.
 
@@ -18,11 +18,11 @@ Dibangun dengan prinsip desain "kertas tanda terima & tinta biru blueprint" — 
 8. [Menjalankan Aplikasi](#menjalankan-aplikasi)
 9. [Struktur Menu & Halaman](#struktur-menu--halaman)
 10. [Alur Kerja Operasional](#alur-kerja-operasional)
-11. [Algoritma Penting (Untuk Pertanyaan Asesor)](#algoritma-penting-untuk-pertanyaan-asesor)
+11. [Algoritma Penting](#algoritma-penting)
 12. [Konfigurasi Kontak Bengkel](#konfigurasi-kontak-bengkel)
 13. [Menjalankan Test](#menjalankan-test)
 14. [Troubleshooting](#troubleshooting)
-15. [Mode Demo Asesor](#mode-demo-asesor)
+15. [Mode Demo](#mode-demo)
 
 ---
 
@@ -222,7 +222,7 @@ composer setup
 
 | | MySQL (XAMPP) | SQLite |
 |---|---|---|
-| Cocok untuk | Demo asesmen resmi / production | Uji coba cepat / laptop tanpa XAMPP |
+| Cocok untuk | Demo resmi / production | Uji coba cepat / laptop tanpa XAMPP |
 | Setup | Buat database `servicetrack` + Start MySQL | Pastikan file `database/database.sqlite` ada |
 | Kecepatan | Cepat | Cepat (untuk skala data demo) |
 | `.env` | `DB_CONNECTION=mysql` + host/port | `DB_CONNECTION=sqlite`, baris lain dikomentari |
@@ -309,7 +309,7 @@ NAVBAR (login)
 
 ---
 
-## Algoritma Penting (Untuk Pertanyaan Asesor)
+## Algoritma Penting
 
 **1. Nomor servis sequential & anti race-condition**
 `ServiceOrder::generateServiceCode()` membungkus pencarian nota terakhir dalam `DB::transaction()` + `lockForUpdate()`, sehingga dua kasir yang menyimpan bersamaan tidak pernah mendapat nomor ganda.
@@ -368,12 +368,12 @@ Test mencakup: root `/` redirect ke portal tracking, dan render halaman-halaman 
 
 ---
 
-## Mode Demo Asesor
+## Mode Demo
 
-- Chip **"Contoh Data Uji"** di portal `/track` hanya tampil ketika `APP_ENV=local` (default `.env` proyek ini). Selama demo, biarkan `local` agar asesor bisa 1-klik data contoh dari HP-nya.
+- Chip **"Contoh Data Uji"** di portal `/track` hanya tampil ketika `APP_ENV=local` (default `.env` proyek ini). Selama demo, biarkan `local` agar pengunjung demo bisa 1-klik data contoh dari HP-nya.
 - **Sebelum aplikasi dipakai bengkel sungguhan**, ganti di `.env`: `APP_ENV=production`, `APP_DEBUG=false`, lalu `php artisan config:clear` — chip demo hilang otomatis dan pesan error tidak lagi menampilkan stack trace.
-- Skenario demo 3 menit tersedia di `PANDUAN_ASESMEN_BNSP.md`.
+- Skenario demo 3 menit tersedia di `PANDUAN_DEMO.md`.
 
 ---
 
-*Dibangun untuk Standar Kompetensi SKKNI BNSP Bidang Pemrograman Web. Lisensi kode aplikasi: mengikuti kebutuhan proyek; framework Laravel berlisensi MIT.*
+*Lisensi kode aplikasi: mengikuti kebutuhan proyek; framework Laravel berlisensi MIT.*

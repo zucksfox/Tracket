@@ -52,7 +52,7 @@
 
             <div class="mt-6 pt-5 rule-b" style="border-top: 1px solid var(--line-soft);">
                 <div class="text-[12px] t-muted mb-2.5 font-semibold flex items-center justify-between">
-                    <span>Akses Cepat Uji Asesmen (1-Klik):</span>
+                    <span>Akses Cepat Akun Demo (1-Klik):</span>
                     <span class="mono text-[10px] t-ink" style="border: 1px solid var(--line); padding: 1px 6px; border-radius: 3px;">DEMO</span>
                 </div>
                 <div class="grid grid-cols-2 gap-2">

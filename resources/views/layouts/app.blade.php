@@ -97,7 +97,6 @@
     <footer class="no-print border-t" style="border-color: var(--line-soft);">
         <div class="max-w-[1180px] mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-1.5 text-[11.5px] t-muted">
             <span>Tracket v1.1, Sistem Manajemen Bengkel & Garansi</span>
-            <span>Standar SKKNI BNSP Bidang Pemrograman Web</span>
         </div>
     </footer>
 

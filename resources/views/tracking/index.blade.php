@@ -73,7 +73,7 @@
     </main>
 
     <footer class="max-w-3xl w-full mx-auto px-4 py-4 text-center text-[11.5px] t-muted" style="border-top: 1px solid var(--line-soft);">
-        Tracket, Sistem Standar SKKNI BNSP Bidang Pemrograman Web
+        Tracket, Sistem Manajemen Bengkel & Garansi
     </footer>
 </body>
 </html>
