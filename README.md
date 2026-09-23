@@ -7,25 +7,6 @@
 
 <br/>
 
-<!-- Stempel garansi ASCII, menyatu dengan tema blueprint -->
-```text
- ┌─────────────────────────────────────┐
- │  ╔═══════════════════════════════╗  │
- │  ║   ✦  T R A C K E T  ✦         ║  │
- │  ║   Bengkel Servis & Garansi    ║  │
- │  ╠═══════════════════════════════╣  │
- │  ║  SRV-202609-0001              ║  │
- │  ║  ● Menunggu Diagnosa          ║  │
- │  ║  ● Sedang Dikerjakan  ←●      ║  │
- │  ║  ○ Siap Diambil               ║  │
- │  ║  ○ Garansi Aktif              ║  │
- │  ╚═══════════════════════════════╝  │
- └─────────────────────────────────────┘
-        * cap stempel diterima *
-```
-
-<br/>
-
 ![Laravel](https://img.shields.io/badge/Laravel_12-1E3A5F?style=flat-square&logo=laravel&logoColor=white)
 ![PHP](https://img.shields.io/badge/PHP_%E2%89%A58.2-2F6690?style=flat-square&logo=php&logoColor=white)
 ![Tailwind](https://img.shields.io/badge/Tailwind_4-3E6E96?style=flat-square&logo=tailwindcss&logoColor=white)
