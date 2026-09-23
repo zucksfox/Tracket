@@ -1,9 +1,9 @@
 <div align="center">
 
 <!-- ═══════════════════ HERO ═══════════════════ -->
-<img src="https://readme-typing-svg.demolab.com/?font=IBM+Plex+Mono:wght@600&size=44&duration=2800&pause=1000&color=2F6690&center=true&vCenter=true&width=720&lines=%F0%9D%90%93%F0%9D%90%AB%F0%9D%90%9A%F0%9D%90%9C%F0%9D%90%A4%F0%9D%90%9E%F0%9D%90%AD" alt="Tracket" />
+<img src="https://readme-typing-svg.demolab.com/?font=IBM+Plex+Mono:wght@600&size=44&duration=2800&pause=1000&color=38BDF8&center=true&vCenter=true&width=720&lines=%F0%9D%90%93%F0%9D%90%AB%F0%9D%90%9A%F0%9D%90%9C%F0%9D%90%A4%F0%9D%90%9E%F0%9D%90%AD" alt="Tracket" />
 
-<img src="https://readme-typing-svg.demolab.com/?font=IBM+Plex+Sans+Condensed&size=20&duration=3200&pause=900&color=1E3A5F&center=true&vCenter=true&width=820&lines=Sistem+Manajemen+Bengkel+Servis+%26+Garansi;Check-in+%E2%86%92+Diagnosa+%E2%86%92+Pengerjaan+%E2%86%92+Garansi+Aktif" alt="tagline" />
+<img src="https://readme-typing-svg.demolab.com/?font=IBM+Plex+Sans+Condensed&size=20&duration=3200&pause=900&color=0284C7&center=true&vCenter=true&width=820&lines=Sistem+Manajemen+Bengkel+Servis+%26+Garansi;Check-in+%E2%86%92+Diagnosa+%E2%86%92+Pengerjaan+%E2%86%92+Garansi+Aktif" alt="tagline" />
 
 <br/>
 
