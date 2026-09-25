@@ -139,8 +139,14 @@ tidak menebak warna sendiri.
 
 ### b. Pedoman penulisan kode (coding guidelines)
 
+* Pedoman lengkapnya ada di **`CODE_GUIDELINES.md`**: acuan (PSR-1/4/12),
+  aturan yang ditegakkan mesin, aturan yang harus dipatuhi manusia (penamaan,
+  deklarasi tipe, visibilitas, PHPDoc, larangan), serta alur kerja sebelum
+  commit.
 * **PSR-12** ditegakkan otomatis oleh Laravel Pint. Konfigurasi ada di
   `pint.json`, mengunci preset `laravel`.
+* Pemeriksaan juga berjalan otomatis di GitHub Actions
+  (`.github/workflows/pint.yml`) pada setiap push dan pull request.
 * Perintah pemeriksaan dan perbaikan:
 
 ```bash
@@ -563,7 +569,9 @@ tiga tabel, indeks gabungan pada `activity_logs`, dan migrasi tambahan yang
 | `UX_UI_AUDIT.md` | temuan audit antarmuka dan perbaikannya |
 | `PANDUAN_DEMO.md` | langkah demo per peran, akun, catatan basis data |
 | `update.md`, `IMPLEMENTASI_UPDATE.md` | catatan perubahan versi |
+| `CODE_GUIDELINES.md` | pedoman penulisan kode, larangan, dan cara penegakannya |
 | `RANCANGAN.md` | dokumen ini — pemetaan rancangan ke kode |
+| `docs/uml/` | 9 diagram UML + cara render ulang |
 | PHPDoc | seluruh kelas, method publik, dan properti pada `app/` |
 
 Bentuk PHPDoc yang dipakai mengikuti pedoman PHP: ringkasan satu baris,
@@ -645,6 +653,9 @@ app/Http/Controllers/ReportExportController.php     HTTP ekspor dan unduh
 database/migrations/2026_09_25_100000_...php        penyeragaman subject_type log
 tests/Unit/ReportExportTest.php                     8 tes
 tests/Feature/ReportExportWorkflowTest.php          10 tes
-pint.json                                           konfigurasi gaya kode
+pint.json                                           konfigurasi pemeriksa gaya kode
+CODE_GUIDELINES.md                                  pedoman penulisan kode
+.github/workflows/pint.yml                          pemeriksaan otomatis setiap push
+docs/uml/                                           9 diagram UML (.puml/.svg/.png)
 RANCANGAN.md                                        dokumen ini
 ```

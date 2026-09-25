@@ -262,7 +262,9 @@ Tracket/
 ├── database/seeders/                   # data contoh realistis
 ├── public/fonts/                       # Inter & font kode self-hosted (demo offline)
 ├── tests/                              # 138 tes: php artisan test
-├── pint.json                           # pedoman gaya kode (PSR-12 / preset Laravel)
+├── CODE_GUIDELINES.md                  # pedoman penulisan kode (ditegakkan Pint)
+├── pint.json                           # konfigurasi pemeriksa gaya kode
+├── .github/workflows/pint.yml          # pemeriksaan otomatis setiap push
 ├── RANCANGAN.md                        # rancangan, ERD, pemetaan ketentuan ujian
 └── design.md                           # sumber kebenaran sistem desain
 ```
@@ -283,12 +285,14 @@ Halaman **Laporan** (admin) dapat menyimpan laporan periode terpilih menjadi ber
 ## 🧪 Menjalankan Test
 
 ```bash
-php artisan test          # 138 tes, 499 asersi
+php artisan test           # 138 tes, 499 asersi
 php vendor/bin/pint --test # pemeriksaan gaya kode (PSR-12)
 ```
 
-Rancangan, diagram relasi basis data, dan pemetaan setiap ketentuan ujian
-praktik ke kode ada di [RANCANGAN.md](RANCANGAN.md).
+Aturan penulisan kode ada di [CODE_GUIDELINES.md](CODE_GUIDELINES.md) —
+pedoman, larangan, dan cara menegakkannya. Rancangan, diagram relasi basis
+data, serta pemetaan setiap ketentuan ujian praktik ke kode ada di
+[RANCANGAN.md](RANCANGAN.md), dan diagram UML-nya di [docs/uml](docs/uml).
 
 ---
 
