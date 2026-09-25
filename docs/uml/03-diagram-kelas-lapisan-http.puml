@@ -1,0 +1,137 @@
+@startuml
+' ==============================================================
+'  DIAGRAM KELAS - LAPISAN HTTP
+'  Sumber: app/Http/Controllers/*.php, routes/web.php
+' ==============================================================
+skinparam classAttributeIconSize 0
+skinparam nodesep 16
+skinparam ranksep 24
+skinparam dpi 90
+hide circle
+skinparam class {
+  BackgroundColor #FCFCFD
+  BorderColor #4B5563
+  ArrowColor #1E7A5C
+}
+
+abstract class "App\\Http\\Controllers\\Controller" as BaseController <<abstract>>
+
+package "App\\Http\\Controllers" {
+
+  class AuthController {
+    + showLogin() : View|RedirectResponse
+    + login(request) : RedirectResponse
+    + quickLogin(role) : RedirectResponse
+    + logout(request) : RedirectResponse
+  }
+
+  class DashboardController {
+    + index(request) : View
+  }
+
+  class ServiceOrderController <<utama>> {
+    + index(request) : View
+    + create() : View
+    + store(request) : RedirectResponse
+    + show(serviceOrder) : View
+    + updateStatus(request, serviceOrder) : RedirectResponse
+    + addPart(request, serviceOrder) : RedirectResponse
+    + removePart(serviceOrder, orderPart) : RedirectResponse
+    + checkout(request, serviceOrder) : RedirectResponse
+    + cancel(request, serviceOrder) : RedirectResponse
+    + printReceipt(serviceOrder) : View
+    + printInvoice(serviceOrder) : View
+    - lockEditableOrder(serviceOrder) : ServiceOrder
+  }
+
+  class CustomerController {
+    + index(request) : View
+    + create() : View
+    + store(request) : RedirectResponse
+    + edit(customer) : View
+    + update(request, customer) : RedirectResponse
+    + destroy(customer) : RedirectResponse
+    + lookup(request) : JsonResponse
+  }
+
+  class SparepartController {
+    + index(request) : View
+    + create() : View
+    + store(request) : RedirectResponse
+    + edit(sparepart) : View
+    + update(request, sparepart) : RedirectResponse
+    + destroy(sparepart) : RedirectResponse
+  }
+
+  class TechnicianController {
+    + index(request) : View
+    + create() : View
+    + store(request) : RedirectResponse
+    + edit(technician) : View
+    + update(request, technician) : RedirectResponse
+    + destroy(request, technician) : RedirectResponse
+  }
+
+  class TrackingController {
+    + index() : View
+    + search(request) : View|RedirectResponse
+    + show(service_code) : View
+  }
+
+  class SparepartNotificationController {
+    + index(request) : JsonResponse
+  }
+
+  class ReportController {
+    + index(request, report, archiver, registry) : View
+  }
+
+  class ReportExportController {
+    + store(request, report, service, registry, archiver) : RedirectResponse
+    + download(request, file, archiver, registry) : Response
+  }
+}
+
+package "App\\Http\\Middleware" {
+  class RoleMiddleware {
+    + handle(request, next, ...roles) : Response
+  }
+  class NoStoreAuthenticated {
+    + handle(request, next) : Response
+  }
+}
+
+BaseController <|-- AuthController
+BaseController <|-- DashboardController
+BaseController <|-- ServiceOrderController
+BaseController <|-- CustomerController
+BaseController <|-- SparepartController
+BaseController <|-- TechnicianController
+BaseController <|-- TrackingController
+BaseController <|-- SparepartNotificationController
+BaseController <|-- ReportController
+BaseController <|-- ReportExportController
+
+ReportController ..> "App\\Actions\\ReportQuery" : memakai
+ReportController ..> "App\\Exports\\ExportArchiver" : mendaftar arsip
+ReportController ..> "App\\Exports\\ReportExporterRegistry" : daftar format
+ReportExportController ..> "App\\Exports\\ReportExportService" : menyusun data
+ReportExportController ..> "App\\Exports\\ReportExporterRegistry" : memilih format
+ReportExportController ..> "App\\Exports\\ExportArchiver" : menulis / membaca berkas
+ServiceOrderController ..> "App\\Models\\ServiceOrder" : mengubah status
+RoleMiddleware ..> "App\\Models\\User" : memeriksa peran
+
+note right of RoleMiddleware
+  Parameter variadic ...roles membuat satu
+  kelas melayani semua kombinasi:
+  role:admin  |  role:admin,cashier
+  role:admin,technician
+end note
+
+note bottom of ReportExportController
+  Controller ini tidak pernah menyebut nama kelas
+  format secara langsung -- hanya tipe ExportableReport.
+  Itulah polymorphism saat aplikasi berjalan.
+end note
+
+@enduml

@@ -1,0 +1,55 @@
+@startuml
+' ==============================================================
+'  DIAGRAM URUTAN - CHECK-IN SERVIS (KASIR)
+'  Sumber: ServiceOrderController::store()
+' ==============================================================
+skinparam sequenceMessageAlign left
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 130
+
+actor "Kasir" as Kasir
+participant "Halaman\nCheck-in" as UI
+participant "RoleMiddleware\nrole:admin,cashier" as MW
+participant "ServiceOrder\nController" as SOC
+participant "Customer\n(Model)" as Cust
+participant "ServiceOrder\n(Model)" as SO
+database "MySQL" as DB
+
+Kasir -> UI : isi nomor HP, perangkat, keluhan
+UI -> MW : POST /service/check-in
+MW -> MW : Auth::check()
+MW -> MW : in_array(user->role, ['admin','cashier'])
+alt peran tidak berwenang
+  MW --> UI : 403 Akses Ditolak
+else peran sah
+  MW -> SOC : store(request)
+  SOC -> SOC : validate() nama, HP, perangkat, keluhan
+  alt data tidak lolos validasi
+    SOC --> UI : redirect back + pesan galat
+  else data sah
+    SOC -> SOC : preg_match HP /^08[0-9]{8,11}$/
+    alt format HP salah
+      SOC --> UI : back() + error "Format nomor HP tidak dikenal"
+    else format HP benar
+      SOC -> DB : BEGIN TRANSACTION
+      SOC -> Cust : where phone / 62xxx / 0xxx
+      alt pelanggan sudah terdaftar
+        Cust --> SOC : data pelanggan lama (nama tidak ditimpa)
+      else pelanggan baru
+        SOC -> Cust : create(name, phone, address)
+        Cust --> SOC : customer_id
+      end
+      SOC -> SO : generateServiceCode()
+      SO -> DB : SELECT ... FOR UPDATE (kunci baris)
+      SO -> SO : nomor terakhir + 1, pad 4 digit
+      SO --> SOC : "SRV-YYYYMM-XXXX"
+      SOC -> SO : create(service_code, status = pending, ...)
+      SO -> SO : LogsActivity: writeLog("created")
+      SO -> DB : INSERT activity_logs (subject_type = "service_order")
+      SOC -> DB : COMMIT
+      SOC --> UI : redirect /services/{id} + pesan sukses
+    end
+  end
+end
+UI --> Kasir : halaman detail servis + tombol cetak tanda terima
+@enduml

@@ -1,0 +1,132 @@
+@startuml
+' ==============================================================
+'  DIAGRAM KELAS - DOMAIN MODEL
+'  Sumber: app/Models/*.php, app/Models/Concerns/LogsActivity.php
+' ==============================================================
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+skinparam nodesep 40
+skinparam ranksep 55
+skinparam packageStyle rectangle
+skinparam class {
+  BackgroundColor #FCFCFD
+  BorderColor #4B5563
+  ArrowColor #1E7A5C
+}
+hide circle
+
+abstract class "Illuminate\\Database\\Eloquent\\Model" as EloquentModel
+abstract class "Illuminate\\Foundation\\Auth\\User" as AuthUser
+interface "Illuminate\\Contracts\\Filesystem" as Filesystem <<framework>>
+
+package "App\\Models" {
+
+  class User {
+    # fillable : array
+    # hidden : array  { password, remember_token }
+    # casts() : array
+    + isAdmin() : bool
+    + isTechnician() : bool
+    + isCashier() : bool
+    + canCheckout() : bool
+    + canRepair() : bool
+    + assignedServices() : HasMany
+  }
+
+  class Customer {
+    # fillable : array
+    + serviceOrders() : HasMany
+    + activityLogs() : MorphMany
+  }
+
+  class ServiceOrder {
+    # fillable : array
+    # casts() : array
+    + customer() : BelongsTo
+    + technician() : BelongsTo
+    + orderParts() : HasMany
+    + activityLogs() : MorphMany
+    + {static} generateServiceCode() : string
+    + recalculateTotal() : void
+    + getStatusMetaAttribute() : array
+    + getNextActionAttribute() : array
+    + getWarrantyInfoAttribute() : array
+  }
+
+  class ServiceOrderPart {
+    # fillable : array
+    # casts() : array
+    + serviceOrder() : BelongsTo
+    + sparepart() : BelongsTo
+  }
+
+  class Sparepart {
+    # fillable : array
+    # casts() : array
+    + isLowStock() : bool
+    + serviceOrderParts() : HasMany
+    + activityLogs() : MorphMany
+  }
+
+  class ActivityLog {
+    # fillable : array
+    # casts() : array  { properties = array }
+    + subject() : MorphTo
+    + causer() : BelongsTo
+  }
+}
+
+package "App\\Models\\Concerns" {
+  class LogsActivity <<trait>> {
+    + {static} bootLogsActivity() : void
+    + activityLogs() : MorphMany
+    # writeLog(action, newData, oldData) : void
+  }
+}
+
+enum "StatusServis" as StatusServis <<ENUM basis data>> {
+  pending
+  diagnosing
+  in_progress
+  ready
+  completed
+  cancelled
+}
+
+EloquentModel <|-- Customer
+EloquentModel <|-- ServiceOrder
+EloquentModel <|-- ServiceOrderPart
+EloquentModel <|-- Sparepart
+EloquentModel <|-- ActivityLog
+AuthUser <|-- User
+
+LogsActivity <.. Customer : <<use>>
+LogsActivity <.. ServiceOrder : <<use>>
+LogsActivity <.. Sparepart : <<use>>
+
+User "1" -- "0..*" ServiceOrder : technician_id\n(nullable, nullOnDelete)
+Customer "1" -- "1..*" ServiceOrder : customer_id\n(cascadeOnDelete)
+ServiceOrder "1" *-- "0..*" ServiceOrderPart : service_order_id
+Sparepart "1" -- "0..*" ServiceOrderPart : sparepart_id\n(restrictOnDelete)
+ServiceOrder "1" -- "0..*" ActivityLog : subject (morphMany)
+Customer "1" -- "0..*" ActivityLog : subject (morphMany)
+Sparepart "1" -- "0..*" ActivityLog : subject (morphMany)
+ActivityLog "0..*" --> "0..1" EloquentModel : subject() : MorphTo
+User "0..1" -- "0..*" ActivityLog : causer_id
+ServiceOrder --> StatusServis : status
+
+note right of ActivityLog
+  subject_type menyimpan alias pendek
+  ("customer", "sparepart", "service_order")
+  yang didaftarkan di Relation::enforceMorphMap()
+  pada AppServiceProvider. Satu tabel log
+  melayani tiga model sekaligus.
+end note
+
+note bottom of ServiceOrder
+  Accessor getWarrantyInfoAttribute()
+  menghitung sisa masa garansi saat dibaca,
+  tidak disimpan sebagai kolom.
+end note
+
+@enduml

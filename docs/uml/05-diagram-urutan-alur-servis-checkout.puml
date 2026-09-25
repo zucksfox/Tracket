@@ -1,0 +1,67 @@
+@startuml
+' ==============================================================
+'  DIAGRAM URUTAN - ALUR STATUS SERVIS SAMPAI CHECKOUT
+'  Sumber: ServiceOrderController::updateStatus(), addPart(),
+'          checkout(), cancel(); ServiceOrder::getNextActionAttribute()
+' ==============================================================
+skinparam sequenceMessageAlign left
+skinparam maxMessageSize 130
+skinparam stateBackgroundColor #EDF7F1
+skinparam stateBorderColor #1E7A5C
+
+actor "Teknisi" as Tek
+actor "Kasir" as Kas
+participant "ServiceOrder\nController" as SOC
+participant "ServiceOrder\n(Model)" as SO
+participant "Sparepart\n(Model)" as SP
+database "MySQL" as DB
+
+== Pengerjaan (teknisi / admin) ==
+Tek -> SOC : POST /services/{id}/update-status
+SOC -> SOC : lockEditableOrder() : tolak bila completed/cancelled
+SOC -> SO : status = "diagnosing"
+SO -> SO : getNextActionAttribute() -> "Mulai Pengerjaan"
+SOC --> Tek : tombol berikutnya berubah (satu klik, satu aksi)
+
+Tek -> SOC : POST /services/{id}/add-part (sparepart_id, quantity)
+SOC -> SP : lockForUpdate()
+alt stok mencukupi
+  SOC -> SP : stock = stock - quantity
+  SOC -> DB : INSERT service_order_parts (unit_price, subtotal)
+  SOC -> SO : recalculateTotal() : labor_cost + SUM(subtotal)
+  SOC --> Tek : stok terpotong, tagihan diperbarui
+else stok tidak cukup
+  SOC --> Tek : galat, tidak ada perubahan
+end
+
+Tek -> SOC : POST /services/{id}/update-status
+SOC -> SO : status = "ready"  (siap diambil)
+
+== Checkout (kasir / admin) ==
+Kas -> SOC : POST /services/{id}/checkout
+SOC -> SOC : abort_unless(user->canCheckout(), 403)
+SOC -> SOC : validate warranty_days, payment_method, confirm_payment
+alt metode QR tanpa centang konfirmasi
+  SOC --> Kas : back() + error "Pembayaran belum dikonfirmasi"
+else pembayaran sah
+  SOC -> DB : BEGIN TRANSACTION
+  SOC -> SO : lockForUpdate() + abort_unless(status === "ready")
+  SOC -> SO : payment_status = "paid", paid_at = now()
+  SOC -> SO : status = "completed"
+  SOC -> SO : warranty_expires_at = today + warranty_days
+  SOC -> SO : recalculateTotal()
+  SO -> SO : LogsActivity: catat perubahan
+  SOC -> DB : COMMIT
+  SOC --> Kas : faktur + kartu garansi siap dicetak
+end
+
+== Pembatalan (admin) ==
+Kas -> SOC : POST /services/{id}/cancel
+SOC -> DB : BEGIN TRANSACTION
+loop setiap service_order_part
+  SOC -> SP : stock = stock + quantity (kembalikan)
+end
+SOC -> SO : status = "cancelled"
+SOC -> DB : COMMIT
+SOC --> Kas : ringkasan suku cadang yang dikembalikan
+@enduml

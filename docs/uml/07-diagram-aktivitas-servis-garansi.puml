@@ -1,0 +1,77 @@
+@startuml
+' ==============================================================
+'  DIAGRAM AKTIVITAS - CHECK-IN SAMPAI GARANSI AKTIF
+'  Sumber: ServiceOrderController, ServiceOrder::getWarrantyInfoAttribute()
+' ==============================================================
+skinparam activityBackgroundColor #EDF7F1
+skinparam activityBorderColor #1E7A5C
+skinparam activityDiamondBackgroundColor #FFF7E8
+
+start
+:Pelanggan datang membawa perangkat;
+:Kasir membuka halaman Check-in;
+:Isi nomor HP + data perangkat + keluhan;
+
+if (Nomor HP berawalan 08 dan 10-13 digit?) then (tidak)
+  :Tampilkan pesan format nomor HP;
+  stop
+else (ya)
+endif
+
+if (Nomor HP sudah terdaftar?) then (ya)
+  :Pakai data pelanggan lama;
+  note right
+    Nama dan alamat lama TIDAK ditimpa
+    input baru yang mungkin salah ketik.
+  end note
+else (tidak)
+  :Buat pelanggan baru;
+endif
+
+:Buat nomor nota SRV-YYYYMM-XXXX
+(transaksi + kunci baris);
+:Cetak Tanda Terima;
+
+repeat
+  :Teknisi memindahkan status satu langkah;
+  :Catat diagnosa dan tarif jasa;
+  if (Perlu suku cadang?) then (ya)
+    :Pasang suku cadang;
+    :Stok terpotong, tagihan dihitung ulang;
+  else (tidak)
+  endif
+repeat while (Status belum "Siap Diambil"?) is (ya) not (tidak)
+
+if (Unit diambil pelanggan?) then (tidak)
+  :Admin membatalkan servis;
+  :Stok seluruh suku cadang dikembalikan;
+  :Status menjadi "Dibatalkan";
+  stop
+else (ya)
+endif
+
+:Kasir memilih metode bayar (tunai / QR);
+if (Metode QR?) then (ya)
+  if (Uang sudah benar-benar masuk?) then (belum)
+    :Minta centang konfirmasi manual;
+    stop
+  else (ya)
+  endif
+else (tunai)
+endif
+
+:Status menjadi "Selesai", pembayaran LUNAS;
+:Set tanggal kedaluwarsa garansi;
+:Cetak Faktur + Kartu Garansi;
+:Pelanggan memantau lewat /track tanpa login;
+
+if (Hari ini <= tanggal kedaluwarsa?) then (ya)
+  :Kartu garansi menampilkan
+  "Garansi Aktif (n hari tersisa)";
+else (tidak)
+  :Kartu garansi menampilkan
+  "Masa Garansi Habis";
+endif
+
+stop
+@enduml

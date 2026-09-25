@@ -1,0 +1,83 @@
+@startuml
+' ==============================================================
+'  DIAGRAM KOMPONEN - ARSITEKTUR APLIKASI TRACKET
+'  Sumber: routes/web.php, composer.json, package.json
+' ==============================================================
+skinparam componentStyle uml2
+skinparam componentBackgroundColor #FCFCFD
+skinparam componentBorderColor #4B5563
+skinparam arrowColor #1E7A5C
+
+package "Peramban (klien)" {
+  [Blade + Tailwind 4\n25 berkas tampilan] as UI
+  [JavaScript\nresources/js/app.js] as JS
+}
+
+package "Aplikasi Laravel 12 / PHP 8.2" {
+
+  package "Lapisan Masuk" {
+    [routes/web.php\n66 baris] as ROUTES
+    [RoleMiddleware\nadmin | cashier | technician] as MW
+    [NoStoreAuthenticated\nanti cache halaman] as NOSTORE
+  }
+
+  package "Lapisan Presentasi" {
+    [10 Controller] as CTRL
+    [layouts/theme.blade.php\nToken desain] as THEME
+  }
+
+  package "Lapisan Domain" {
+    [6 Model Eloquent\n+ trait LogsActivity] as MODEL
+    [App\\Actions\nReportQuery, DateRangeFilter] as ACT
+  }
+
+  package "Lapisan Berkas" {
+    [ExportableReport\n<<interface>>] as IFACE
+    [CsvReportExporter] as CSV
+    [JsonReportExporter] as JSON
+    [ExportArchiver] as ARC
+    [ReportExportService] as RES
+  }
+
+  package "Lapisan Pengujian" {
+    [PHPUnit 11\n138 tes, 499 asersi] as TEST
+  }
+}
+
+database "MySQL 8\n6 tabel + FK + index" as DB
+folder "storage/app/private/exports\nBerkas arsip laporan" as DISK
+cloud "Excel / pengolah angka\n(konsumen berkas CSV)" as EXCEL
+
+UI --> ROUTES : HTTP request
+JS --> ROUTES : AJAX (lookup pelanggan,\nnotifikasi stok)
+ROUTES --> MW
+ROUTES --> NOSTORE
+ROUTES --> CTRL
+CTRL --> MODEL
+CTRL --> ACT
+CTRL --> IFACE
+IFACE <|.. CSV
+IFACE <|.. JSON
+CTRL --> RES
+CTRL --> ARC
+MODEL --> DB : Eloquent / PDO
+RES --> DB : baca bertahap (chunk)
+ARC --> DISK : tulis & baca berkas
+CSV ..> EXCEL : berkas terbuka rapi\n(BOM UTF-8, pemisah ";")
+CTRL --> THEME
+TEST ..> CTRL : Feature test
+TEST ..> MODEL : Unit test
+TEST ..> IFACE : uji kontrak ekspor
+
+note right of IFACE
+  Satu antarmuka, dua implementasi.
+  Controller hanya bergantung pada
+  antarmuka ini.
+end note
+
+note bottom of DB
+  Data tersimpan permanen;
+  dibaca kembali pada setiap permintaan.
+end note
+
+@enduml

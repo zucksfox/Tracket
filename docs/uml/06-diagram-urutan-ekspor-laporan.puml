@@ -1,0 +1,58 @@
+@startuml
+' ==============================================================
+'  DIAGRAM URUTAN - EKSPOR LAPORAN KE BERKAS
+'  Sumber: ReportExportController::store()/download(),
+'          ReportExportService, ReportExporterRegistry,
+'          ExportArchiver, CsvReportExporter
+' ==============================================================
+skinparam sequenceMessageAlign left
+skinparam maxMessageSize 140
+
+actor "Admin" as Adm
+participant "Halaman\nLaporan" as UI
+participant "ReportExport\nController" as REC
+participant "ReportQuery" as RQ
+participant "ReportExport\nService" as RES
+participant "ReportExporter\nRegistry" as REG
+participant "CsvReport\nExporter" as CSV
+participant "ExportArchiver" as ARC
+database "MySQL" as DB
+participant "Disk\nstorage/app/private" as DISK
+
+Adm -> UI : pilih format + klik "Simpan & ekspor"
+UI -> REC : POST /reports/export (format, start, end, status)
+REC -> REC : abort_unless(user->isAdmin(), 403)
+REC -> REG : formats()  -- validasi nilai format
+REG --> REC : ["csv", "json"]
+REC -> RQ : range() + status()
+RQ --> REC : Carbon start, Carbon end, status
+REC -> REG : make("csv")
+REG --> REC : CsvReportExporter (sebagai ExportableReport)
+
+REC -> RES : build(query)
+loop do-while sampai potongan terakhir tidak penuh
+  RES -> DB : SELECT ... LIMIT 200 OFFSET n
+  DB --> RES : potongan baris servis
+  RES -> RES : rowFor(order, nomor) : 17 kolom dari ReportColumnMap
+end
+RES --> REC : [header, rows]
+
+REC -> ARC : store(exporter, basename, header, rows)
+ARC -> CSV : render(header, rows)  <-- polymorphism saat berjalan
+CSV -> CSV : BOM UTF-8 + fputcsv pemisah ";"
+CSV --> ARC : isi berkas CSV
+ARC -> DISK : put("exports/laporan-servis-...-20260925-071952.csv")
+ARC --> REC : {name, size, rows, created_at}
+REC --> UI : redirect + pesan sukses (nama berkas, jumlah baris, ukuran)
+
+Adm -> UI : klik "Unduh" pada baris arsip
+UI -> REC : GET /reports/export/{file}
+REC -> ARC : read(name)  -- nama disaring, path traversal ditolak
+ARC -> DISK : get("exports/{file}")
+DISK --> ARC : isi berkas
+ARC --> REC : isi berkas (677 byte)
+REC -> REG : forFile(name)  -- tentukan MIME dari ekstensi
+REG --> REC : CsvReportExporter
+REC --> UI : 200 text/csv + Content-Disposition attachment
+UI --> Adm : berkas terunduh, isinya sama dengan tabel di layar
+@enduml

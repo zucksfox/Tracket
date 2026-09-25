@@ -1,0 +1,112 @@
+@startuml
+' ==============================================================
+'  DIAGRAM KELAS - HUBUNGAN PEWARISAN, ANTARMUKA, DAN TRAIT
+'  Fokus: pemenuhan konsep OOP
+'  Sumber: seluruh app/
+' ==============================================================
+skinparam classAttributeIconSize 0
+skinparam nodesep 18
+skinparam ranksep 26
+skinparam dpi 90
+hide circle
+hide members
+
+package "Basis kerangka kerja" {
+  class "Illuminate\\Database\\Eloquent\\Model" as M <<framework>>
+  class "Illuminate\\Foundation\\Auth\\User" as AU <<framework>>
+  class "Illuminate\\Support\\ServiceProvider" as SP <<framework>>
+}
+
+package "App\\Models" {
+  class Customer
+  class Sparepart
+  class ServiceOrder
+  class ServiceOrderPart
+  class ActivityLog
+  class User
+}
+
+package "App\\Models\\Concerns" {
+  class LogsActivity <<trait>>
+}
+
+package "App\\Http\\Controllers" {
+  abstract class Controller
+  class AuthController
+  class ServiceOrderController
+  class ReportController
+  class ReportExportController
+  class CustomerController
+  class SparepartController
+  class TechnicianController
+  class TrackingController
+  class DashboardController
+  class SparepartNotificationController
+}
+
+package "App\\Contracts" {
+  interface ExportableReport
+}
+
+package "App\\Exports" {
+  abstract class AbstractReportExporter
+  class CsvReportExporter
+  class JsonReportExporter
+}
+
+package "App\\Providers" {
+  class AppServiceProvider
+}
+
+M <|-- Customer
+M <|-- Sparepart
+M <|-- ServiceOrder
+M <|-- ServiceOrderPart
+M <|-- ActivityLog
+AU <|-- User
+SP <|-- AppServiceProvider
+
+LogsActivity <.. Customer : use
+LogsActivity <.. Sparepart : use
+LogsActivity <.. ServiceOrder : use
+
+Controller <|-- AuthController
+Controller <|-- ServiceOrderController
+Controller <|-- ReportController
+Controller <|-- ReportExportController
+Controller <|-- CustomerController
+Controller <|-- SparepartController
+Controller <|-- TechnicianController
+Controller <|-- TrackingController
+Controller <|-- DashboardController
+Controller <|-- SparepartNotificationController
+
+ExportableReport <|.. AbstractReportExporter : implements
+AbstractReportExporter <|-- CsvReportExporter
+AbstractReportExporter <|-- JsonReportExporter
+
+note top of LogsActivity
+  TRAIT
+  satu perilaku, dipakai ulang
+  tiga model tanpa duplikasi.
+end note
+
+note right of AbstractReportExporter
+  ABSTRACT
+  fileName() dan cell() sudah jadi,
+  subkelas hanya menulis
+  bagian yang berbeda.
+end note
+
+note bottom of ExportableReport
+  INTERFACE
+  kontrak 5 method, dua implementasi
+  dapat dipertukarkan.
+end note
+
+note bottom of Controller
+  ABSTRACT
+  10 controller konkret mewarisi.
+end note
+
+@enduml

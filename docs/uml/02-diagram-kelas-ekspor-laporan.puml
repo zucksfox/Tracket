@@ -1,0 +1,120 @@
+@startuml
+' ==============================================================
+'  DIAGRAM KELAS - LAPISAN EKSPOR LAPORAN
+'  Sumber: app/Contracts, app/Exports, app/Actions
+' ==============================================================
+skinparam classAttributeIconSize 0
+skinparam nodesep 18
+skinparam ranksep 26
+skinparam dpi 90
+hide circle
+skinparam class {
+  BackgroundColor #FCFCFD
+  BorderColor #4B5563
+  ArrowColor #1E7A5C
+}
+
+package "App\\Contracts" {
+  interface ExportableReport <<interface>> {
+    + extension() : string
+    + mimeType() : string
+    + fileName(basename) : string
+    + render(header, rows) : string
+  }
+}
+
+package "App\\Exports" {
+
+  abstract class AbstractReportExporter <<abstract>> {
+    + fileName(basename) : string
+    # cell(value) : string
+    # cells(row) : array
+  }
+
+  class CsvReportExporter {
+    - {static} DELIMITER : string = ";"
+    + extension() : string
+    + mimeType() : string
+    + render(header, rows) : string
+  }
+
+  class JsonReportExporter {
+    + extension() : string
+    + mimeType() : string
+    + render(header, rows) : string
+  }
+
+  class ReportExporterRegistry <<service>> {
+    - {static} EXPORTERS : array
+    - container : Container
+    + make(format, fallback = null) : ExportableReport
+    + formats() : array
+    + supports(format) : bool
+    + forFile(fileName) : ExportableReport
+  }
+
+  class ReportExportService <<service>> {
+    - {static} CHUNK_SIZE : int = 200
+    - {static} MAX_CHUNKS : int = 100
+    + build(query) : array
+    - rowFor(order, number) : array
+  }
+
+  class ExportArchiver <<service>> {
+    + {static} DIRECTORY : string = "exports"
+    - disk : Filesystem
+    + store(exporter, basename, header, rows) : array
+    + list(limit = 8) : array
+    + read(name) : string
+    + path(name) : string
+  }
+
+  class ReportColumnMap <<utility>> {
+    + {static} definitions() : array
+    + {static} header() : array
+  }
+}
+
+package "App\\Actions" {
+  class DateRangeFilter <<utility>> {
+    + {static} fromRequest(request) : array
+  }
+  class ReportQuery <<service>> {
+    - request : Request
+    + {static} STATUSES : array
+    + range() : array
+    + status() : string
+    + listed() : Builder
+    + completed() : Builder
+  }
+}
+
+ExportableReport <|.. AbstractReportExporter : implements
+AbstractReportExporter <|-- CsvReportExporter
+AbstractReportExporter <|-- JsonReportExporter
+
+ReportExporterRegistry ..> ExportableReport : menghasilkan
+ReportExporterRegistry ..> CsvReportExporter : membuat (format "csv")
+ReportExporterRegistry ..> JsonReportExporter : membuat (format "json")
+ReportExportService ..> ReportColumnMap : memakai
+ExportArchiver ..> ExportableReport : menerima
+ExportArchiver --> Filesystem : menyimpan / membaca
+ReportQuery ..> DateRangeFilter : memakai
+
+note top of ExportableReport
+  Antarmuka inilah satu-satunya tipe yang dikenal
+  ReportExportController. Menambah format Excel
+  cukup membuat satu kelas baru di sini dan
+  mendaftarkannya di registry -- controller,
+  rute, dan tampilan tidak perlu diubah.
+end note
+
+note right of ReportExporterRegistry
+  make(format, fallback = null)
+  adalah bentuk overloading di PHP:
+  parameter opsional + variadic,
+  karena PHP tidak mengizinkan dua
+  method bernama sama.
+end note
+
+@enduml
