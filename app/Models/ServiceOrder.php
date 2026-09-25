@@ -2,16 +2,19 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\LogsActivity;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
 
 class ServiceOrder extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity, SoftDeletes;
 
     protected $fillable = [
         'service_code',
@@ -24,6 +27,9 @@ class ServiceOrder extends Model
         'status',
         'labor_cost',
         'total_cost',
+        'payment_status',
+        'payment_method',
+        'paid_at',
         'warranty_days',
         'warranty_expires_at',
         'technician_notes',
@@ -35,6 +41,7 @@ class ServiceOrder extends Model
             'labor_cost' => 'decimal:2',
             'total_cost' => 'decimal:2',
             'warranty_days' => 'integer',
+            'paid_at' => 'datetime',
             'warranty_expires_at' => 'date',
         ];
     }
@@ -55,14 +62,24 @@ class ServiceOrder extends Model
     }
 
     /**
+     * Jejak audit servis ini (relasi polymorphic dari ActivityLog).
+     *
+     * @return MorphMany<ActivityLog, $this>
+     */
+    public function activityLogs(): MorphMany
+    {
+        return $this->morphMany(ActivityLog::class, 'subject')->latest('id');
+    }
+
+    /**
      * Auto-Generate sequential unique service code: SRV-YYYYMM-XXXX
      * Wrapped in lockForUpdate to prevent race conditions during concurrent check-ins.
      */
     public static function generateServiceCode(): string
     {
         return DB::transaction(function () {
-            $prefix = 'SRV-' . date('Ym') . '-';
-            
+            $prefix = 'SRV-'.date('Ym').'-';
+
             // Lock recent records to determine max sequential number safely
             $latest = self::where('service_code', 'LIKE', "{$prefix}%")
                 ->lockForUpdate()
@@ -76,7 +93,7 @@ class ServiceOrder extends Model
                 $nextNumber = '0001';
             }
 
-            return $prefix . $nextNumber;
+            return $prefix.$nextNumber;
         });
     }
 
@@ -183,7 +200,7 @@ class ServiceOrder extends Model
      */
     public function getWarrantyInfoAttribute(): array
     {
-        if ($this->status !== 'completed' || !$this->warranty_expires_at) {
+        if ($this->status !== 'completed' || ! $this->warranty_expires_at) {
             return [
                 'has_warranty' => false,
                 'is_active' => false,

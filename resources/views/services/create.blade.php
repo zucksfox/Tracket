@@ -1,18 +1,18 @@
 @extends('layouts.app')
 
-@section('title', 'Check-In Servis Baru')
+@section('title', 'Servis Baru')
 
 @section('content')
 <div class="max-w-4xl mx-auto space-y-6">
-    <div class="flex items-center justify-between gap-4">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-            <a href="{{ route('services.index') }}" class="text-[12px] hover:underline" style="color: var(--act);">Kembali ke Daftar Servis</a>
-            <h1 class="text-[20px] font-bold t-ink tracking-tight mt-1">Formulir Penerimaan Unit Servis (Check-In)</h1>
-            <p class="text-[12.5px] t-muted mt-0.5">Catat unit masuk, keluhan kerusakan, kelengkapan, dan cetak surat tanda terima pelanggan.</p>
+            <a href="{{ route('services.index') }}" class="text-[13px] hover:underline" style="color: var(--act);">Kembali ke Daftar Servis</a>
+            <h1 class="text-2xl font-bold t-ink tracking-tight mt-1">Terima servis baru</h1>
+            <p class="text-[13px] t-muted mt-0.5">Catat unit masuk, keluhan kerusakan, kelengkapan, dan cetak surat tanda terima pelanggan.</p>
         </div>
         <div class="hidden sm:block shrink-0">
-            <span class="mono text-[11.5px] font-semibold t-ink px-2.5 py-1 rounded-[3px]" style="border: 1px dashed var(--line);">
-                Kode Otomatis: SRV-{{ date('Ym') }}-XXXX
+            <span class="tabular-nums text-[13px] font-semibold t-ink px-2.5 py-1 rounded-lg" style="border: 1px solid var(--line);">
+                Kode otomatis: <span class="mono">SRV-{{ date('Ym') }}-XXXX</span>
             </span>
         </div>
     </div>
@@ -23,10 +23,10 @@
         <div class="panel p-6 space-y-4">
             <div class="flex items-center justify-between pb-3" style="border-bottom: 1px solid var(--line-soft);">
                 <div class="flex items-center gap-2.5">
-                    <span class="mono text-[12px] font-bold t-ink w-6 h-6 flex items-center justify-center rounded-[3px]" style="border: 1.5px solid var(--ink);">1</span>
+                    <span class="tabular-nums text-[13px] font-bold t-ink w-6 h-6 flex items-center justify-center rounded-lg" style="border: 1px solid var(--line-soft);">1</span>
                     <h2 class="text-[14px] font-semibold t-ink">Identitas Pelanggan</h2>
                 </div>
-                <div id="lookup-badge" class="hidden text-[12px] px-2.5 py-1 rounded-[3px] font-semibold" style="background: rgba(47, 102, 144, .08); border: 1px solid var(--line); color: var(--act-deep);"></div>
+                <div id="lookup-badge" class="hidden text-[13px] px-2.5 py-1 rounded-lg font-semibold" style="background: var(--act-soft, #E3F3EA); border: 1px solid var(--line); color: var(--act-deep);"></div>
             </div>
 
             <input type="hidden" name="customer_id" id="customer_id" value="{{ old('customer_id') }}">
@@ -39,10 +39,10 @@
                     <div class="relative">
                         <input type="text" id="customer_phone" name="customer_phone" value="{{ old('customer_phone') }}" required
                             placeholder="Ketik No. HP (misal: 081234567890)..."
-                            autocomplete="off" class="field mono">
+                            autocomplete="off" class="field tabular-nums">
                         <div id="phone-loading" class="hidden absolute right-3 top-2.5 t-muted text-[13px]">&#8635;</div>
                     </div>
-                    <span class="text-[11px] t-muted mt-1 block">Ketik untuk pencarian otomatis pelanggan terdaftar.</span>
+                    <span class="text-[13px] t-muted mt-1 block">Ketik untuk pencarian otomatis pelanggan terdaftar.</span>
                 </div>
 
                 <div>
@@ -65,7 +65,7 @@
 
         <div class="panel p-6 space-y-4">
             <div class="flex items-center gap-2.5 pb-3" style="border-bottom: 1px solid var(--line-soft);">
-                <span class="mono text-[12px] font-bold t-ink w-6 h-6 flex items-center justify-center rounded-[3px]" style="border: 1.5px solid var(--ink);">2</span>
+                <span class="tabular-nums text-[13px] font-bold t-ink w-6 h-6 flex items-center justify-center rounded-lg" style="border: 1px solid var(--line-soft);">2</span>
                 <h2 class="text-[14px] font-semibold t-ink">Detail Perangkat & Keluhan</h2>
             </div>
 
@@ -106,7 +106,7 @@
 
         <div class="panel p-6 space-y-4">
             <div class="flex items-center gap-2.5 pb-3" style="border-bottom: 1px solid var(--line-soft);">
-                <span class="mono text-[12px] font-bold t-ink w-6 h-6 flex items-center justify-center rounded-[3px]" style="border: 1.5px solid var(--ink);">3</span>
+                <span class="tabular-nums text-[13px] font-bold t-ink w-6 h-6 flex items-center justify-center rounded-lg" style="border: 1px solid var(--line-soft);">3</span>
                 <h2 class="text-[14px] font-semibold t-ink">Penugasan & Estimasi Awal</h2>
             </div>
 
@@ -129,7 +129,7 @@
                     <label for="labor_cost" class="block mb-1">
                         Estimasi Biaya Jasa Awal (Rp) <span class="t-muted font-normal">(Opsional, default 0)</span>
                     </label>
-                    <input type="number" id="labor_cost" name="labor_cost" value="{{ old('labor_cost', 0) }}" min="0" step="5000" class="field mono">
+                    <input type="number" id="labor_cost" name="labor_cost" value="{{ old('labor_cost', 0) }}" min="0" step="5000" class="field tabular-nums">
                 </div>
             </div>
         </div>

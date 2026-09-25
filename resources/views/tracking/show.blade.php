@@ -5,14 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Status Servis {{ $order->service_code }} | Tracket</title>
     <link rel="stylesheet" href="/fonts/fonts.css">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     @include('layouts.theme')
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="min-h-screen flex flex-col">
     <header class="masthead no-print">
         <div class="max-w-3xl w-full mx-auto px-4 flex items-center justify-between h-[54px]">
-            <a href="{{ route('tracking.index') }}" class="text-[12.5px] t-muted hover:underline" style="color: var(--act);">Cari Servis Lain</a>
-            <div class="mono text-[12.5px] font-bold t-ink">{{ $order->service_code }}</div>
+            <a href="{{ route('tracking.index') }}" class="text-[13px] t-muted hover:underline" style="color: var(--act);"><img src="/brand.svg" alt="Tracket" width="150" height="30"></a>
+            <div class="mono text-[13px] font-bold t-ink">{{ $order->service_code }}</div>
         </div>
     </header>
 
@@ -22,43 +23,43 @@
         <div class="panel p-6 sm:p-8 space-y-6">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4" style="border-bottom: 1px solid var(--line-soft);">
                 <div>
-                    <span class="text-[12px] t-muted block">Unit Servis Pelanggan</span>
-                    <h1 class="text-[20px] sm:text-[24px] font-bold t-ink leading-tight">{{ $order->device_name }}</h1>
-                    <span class="text-[12.5px] t-muted">Pemilik: <strong class="t-body">{{ $order->customer->name }}</strong></span>
+                    <span class="text-[13px] t-muted block">Unit Servis Pelanggan</span>
+                    <h1 class="text-2xl sm:text-[24px] font-bold t-ink leading-tight">{{ $order->device_name }}</h1>
+                    <span class="text-[13px] t-muted">Pemilik: <strong class="t-body">{{ $order->customer->name }}</strong></span>
                 </div>
                 <div class="text-left sm:text-right">
-                    <span class="stamp stamp-anim {{ $order->status_meta['bg'] }}">{{ $order->status_meta['label'] }}</span>
-                    <div class="t-[11px] t-muted mt-1.5">Diterima: {{ $order->created_at->isoFormat('D MMMM Y - HH:mm') }} WIB</div>
+                    <span class="stamp {{ $order->status_meta['bg'] }}">{{ $order->status_meta['label'] }}</span>
+                    <div class="text-[13px] t-muted mt-1.5">Diterima: {{ $order->created_at->isoFormat('D MMMM Y - HH:mm') }} WIB</div>
                 </div>
             </div>
 
             @if($order->status === 'ready')
                 <div class="banner banner-act">
                     <div class="text-[13px] font-bold mb-0.5">Kabar Baik! Perangkat Anda Telah Selesai Diperbaiki</div>
-                    <p class="text-[12.5px] mt-0.5" style="color: var(--body);">Unit sudah lulus uji coba teknisi dan siap diambil di meja kasir. Mohon siapkan nomor tanda terima atau bukti WhatsApp ini.</p>
+                    <p class="text-[13px] mt-0.5" style="color: var(--body);">Unit sudah lulus uji coba teknisi dan siap diambil di meja kasir. Mohon siapkan nomor tanda terima atau bukti WhatsApp ini.</p>
                 </div>
             @endif
 
             @if($order->status === 'completed')
                 <div class="banner banner-warranty flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div>
-                        <div class="text-[12.5px] font-bold uppercase flex items-center gap-1.5">
+                        <div class="text-[13px] font-bold flex items-center gap-1.5">
                             <span aria-hidden="true">&#9733;</span>
                             <span>{{ $order->warranty_info['label'] }}</span>
                         </div>
-                        <p class="text-[11.5px] mt-0.5" style="color: var(--body);">Jika terjadi kendala pada komponen yang sama selama masa garansi, bawa kembali unit Anda tanpa biaya tambahan.</p>
+                        <p class="text-[13px] mt-0.5" style="color: var(--body);">Jika terjadi kendala pada komponen yang sama selama masa garansi, bawa kembali unit Anda tanpa biaya tambahan.</p>
                     </div>
                     @if($order->warranty_info['is_active'])
                         <div class="shrink-0 text-left sm:text-right">
-                            <div class="dim-value">{{ $order->warranty_info['days_remaining'] }} hari</div>
-                            <div class="dim-label">sisa garansi, s.d. {{ $order->warranty_expires_at ? $order->warranty_expires_at->format('d/m/Y') : '-' }}</div>
+                            <div class="text-2xl font-semibold tabular-nums">{{ $order->warranty_info['days_remaining'] }} hari</div>
+                            <div class="text-[13px]">sisa garansi, s.d. {{ $order->warranty_expires_at ? $order->warranty_expires_at->format('d/m/Y') : '-' }}</div>
                         </div>
                     @endif
                 </div>
             @endif
 
             <div class="space-y-4">
-                <h2 class="text-[12.5px] font-bold t-ink">Tahapan Pengerjaan</h2>
+                <h2 class="text-[13px] font-bold t-ink">Tahapan Pengerjaan</h2>
                 <div class="timeline">
                     <div class="tstep {{ $cur >= 1 ? 'done' : '' }} {{ $cur === 1 ? 'now' : '' }}">
                         <span class="tdot" aria-hidden="true"></span>
@@ -88,12 +89,12 @@
                 </div>
             </div>
 
-            <div class="panel p-4 space-y-2" style="background: var(--paper);">
-                <span class="text-[12px] font-semibold t-muted block">Keluhan Saat Masuk:</span>
+            <div class="panel p-5 space-y-2" style="background: var(--paper);">
+                <span class="text-[13px] font-semibold t-muted block">Keluhan Saat Masuk:</span>
                 <p class="text-[13px] t-body italic">"{{ $order->issue_description }}"</p>
                 @if($order->technician_notes)
                     <div class="pt-2 mt-2" style="border-top: 1px solid var(--line-soft);">
-                        <span class="text-[12px] font-semibold t-ink block">Laporan Hasil Penanganan Teknisi:</span>
+                        <span class="text-[13px] font-semibold t-ink block">Laporan Hasil Penanganan Teknisi:</span>
                         <p class="text-[13px] t-body mt-0.5">{{ $order->technician_notes }}</p>
                     </div>
                 @endif
@@ -101,28 +102,28 @@
 
             @if($order->orderParts->count() > 0)
                 <div class="space-y-3">
-                    <h2 class="text-[12.5px] font-bold t-ink">Komponen Yang Diganti</h2>
-                    <div class="panel overflow-hidden">
+                    <h2 class="text-[13px] font-bold t-ink">Komponen Yang Diganti</h2>
+                    <div class="panel overflow-hidden p-5">
                         @foreach($order->orderParts as $p)
-                            <div class="p-3 flex justify-between items-center" style="border-bottom: 1px solid var(--line-soft); background: var(--paper);">
+                            <div class="p-5 flex flex-wrap justify-between items-center gap-3" style="border-bottom: 1px solid var(--line-soft); background: var(--paper);">
                                 <div>
                                     <div class="text-[13px] font-semibold t-body">{{ $p->sparepart->name }}</div>
-                                    <span class="mono t-[11px] t-muted">{{ $p->quantity }} unit &times; Rp {{ number_format($p->unit_price, 0, ',', '.') }}</span>
+                                    <span class="tabular-nums text-[13px] t-muted">{{ $p->quantity }} unit &times; Rp {{ number_format($p->unit_price, 0, ',', '.') }}</span>
                                 </div>
-                                <div class="mono text-[13px] t-body">Rp {{ number_format($p->subtotal, 0, ',', '.') }}</div>
+                                <div class="tabular-nums text-[13px] t-body">Rp {{ number_format($p->subtotal, 0, ',', '.') }}</div>
                             </div>
                         @endforeach
                     </div>
                 </div>
             @endif
 
-            <div class="pt-4 flex justify-between items-center" style="border-top: 1.5px solid var(--ink);">
+            <div class="pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3" style="border-top: 1px solid var(--line-soft);">
                 <div>
-                    <span class="text-[12.5px] t-muted block">Total Tagihan Servis:</span>
-                    <span class="t-[11px] t-muted">Termasuk jasa perbaikan dan komponen</span>
+                    <span class="text-[13px] t-muted block">Total Tagihan Servis:</span>
+                    <span class="text-[13px] t-muted">Termasuk jasa perbaikan dan komponen</span>
                 </div>
                 <div>
-                    <span class="mono font-bold t-ink text-[19px]">Rp {{ number_format($order->total_cost, 0, ',', '.') }}</span>
+                    <span class="tabular-nums font-bold t-ink text-[19px]">Rp {{ number_format($order->total_cost, 0, ',', '.') }}</span>
                 </div>
             </div>
         </div>
@@ -134,7 +135,7 @@
         </div>
     </main>
 
-    <footer class="max-w-3xl w-full mx-auto px-4 py-4 text-center text-[11.5px] t-muted" style="border-top: 1px solid var(--line-soft);">
+    <footer class="max-w-3xl w-full mx-auto px-4 py-4 text-center text-[13px] t-muted" style="border-top: 1px solid var(--line-soft);">
         Tracket &copy; {{ date('Y') }}
     </footer>
 </body>

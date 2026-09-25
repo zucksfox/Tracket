@@ -8,6 +8,9 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
+/**
+ * Data induk pelanggan, termasuk pencarian cepat saat check-in servis.
+ */
 class CustomerController extends Controller
 {
     public function index(Request $request): View
@@ -18,7 +21,7 @@ class CustomerController extends Controller
             $search = $request->get('search');
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('phone', 'like', "%{$search}%");
+                    ->orWhere('phone', 'like', "%{$search}%");
             });
         }
 
@@ -36,7 +39,7 @@ class CustomerController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:100'],
-            'phone' => ['required', 'string', 'max:20', 'unique:customers,phone'],
+            'phone' => ['required', 'string', 'regex:/^08[0-9]{8,11}$/', 'max:20', 'unique:customers,phone'],
             'address' => ['nullable', 'string', 'max:500'],
         ], [
             'name.required' => 'Nama pelanggan wajib diisi.',
@@ -58,7 +61,7 @@ class CustomerController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:100'],
-            'phone' => ['required', 'string', 'max:20', 'unique:customers,phone,' . $customer->id],
+            'phone' => ['required', 'string', 'regex:/^08[0-9]{8,11}$/', 'max:20', 'unique:customers,phone,'.$customer->id],
             'address' => ['nullable', 'string', 'max:500'],
         ], [
             'name.required' => 'Nama pelanggan wajib diisi.',
@@ -78,6 +81,7 @@ class CustomerController extends Controller
         }
 
         $customer->delete();
+
         return redirect()->route('customers.index')->with('success', 'Data pelanggan berhasil dihapus.');
     }
 
@@ -87,11 +91,22 @@ class CustomerController extends Controller
     public function lookup(Request $request): JsonResponse
     {
         $phone = $request->get('phone');
-        if (!$phone || strlen($phone) < 3) {
+        if (! $phone || strlen($phone) < 3) {
             return response()->json(['found' => false]);
         }
 
-        $customer = Customer::where('phone', 'like', "%{$phone}%")->first();
+        // Normalize for exact-match lookup: 08xx, 628xx, +62-8xx → unified search
+        $cleanPhone = preg_replace('/[^0-9]/', '', $phone);
+        $cleanPhone = preg_replace('/^(62|0)+/', '0', $cleanPhone);
+
+        if (strlen($cleanPhone) < 8) {
+            return response()->json(['found' => false]);
+        }
+
+        $customer = Customer::where('phone', $cleanPhone)
+            ->orWhere('phone', '62'.ltrim($cleanPhone, '0'))
+            ->orWhere('phone', '0'.ltrim($cleanPhone, '0'))
+            ->first();
 
         if ($customer) {
             return response()->json([
@@ -101,7 +116,7 @@ class CustomerController extends Controller
                     'name' => $customer->name,
                     'phone' => $customer->phone,
                     'address' => $customer->address,
-                ]
+                ],
             ]);
         }
 

@@ -5,9 +5,9 @@
 @section('content')
 <div class="max-w-2xl mx-auto space-y-5">
     <div>
-        <a href="{{ route('customers.index') }}" class="text-[12px] hover:underline" style="color: var(--act);">Kembali ke Data Pelanggan</a>
-        <h1 class="text-[20px] font-bold t-ink tracking-tight mt-1">Formulir Registrasi Pelanggan</h1>
-        <p class="text-[12.5px] t-muted mt-0.5">Lengkapi identitas pelanggan untuk pencatatan nota dan notifikasi servis.</p>
+        <a href="{{ route('customers.index') }}" class="text-[13px] hover:underline" style="color: var(--act);">Kembali ke Data Pelanggan</a>
+        <h1 class="text-2xl font-bold t-ink tracking-tight mt-1">Tambah pelanggan</h1>
+        <p class="text-[13px] t-muted mt-0.5">Lengkapi identitas pelanggan untuk pencatatan nota dan notifikasi servis.</p>
     </div>
 
     <div class="panel p-6">
@@ -22,8 +22,8 @@
             <div>
                 <label for="phone" class="block mb-1">Nomor WhatsApp / HP Aktif <span style="color: var(--rose);">*</span></label>
                 <input type="text" id="phone" name="phone" value="{{ old('phone') }}" required
-                    placeholder="contoh: 081234567890" class="field mono">
-                <span class="text-[11px] t-muted mt-1 block">Nomor ini digunakan pelanggan untuk melacak status servis pada portal publik.</span>
+                    placeholder="contoh: 081234567890" class="field tabular-nums">
+                <span class="text-[13px] t-muted mt-1 block">Nomor ini digunakan pelanggan untuk melacak status servis pada portal publik.</span>
             </div>
 
             <div>

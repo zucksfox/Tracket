@@ -7,6 +7,9 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
+/**
+ * Manajemen akun teknisi dan pengguna backoffice lainnya.
+ */
 class TechnicianController extends Controller
 {
     /**
@@ -24,11 +27,11 @@ class TechnicianController extends Controller
             $search = $request->get('search');
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+                    ->orWhere('email', 'like', "%{$search}%");
             });
         }
 
-        if ($request->get('role') === 'admin' || $request->get('role') === 'technician') {
+        if (in_array($request->get('role'), ['admin', 'cashier', 'technician'], true)) {
             $query->where('role', $request->get('role'));
         }
 
@@ -48,7 +51,7 @@ class TechnicianController extends Controller
             'name' => ['required', 'string', 'max:100'],
             'email' => ['required', 'string', 'email', 'max:150', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8', 'max:100'],
-            'role' => ['required', 'in:technician,admin'],
+            'role' => ['required', 'in:technician,admin,cashier'],
         ], [
             'name.required' => 'Nama lengkap wajib diisi.',
             'email.required' => 'Alamat email wajib diisi.',
@@ -79,9 +82,9 @@ class TechnicianController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:100'],
-            'email' => ['required', 'string', 'email', 'max:150', 'unique:users,email,' . $technician->id],
+            'email' => ['required', 'string', 'email', 'max:150', 'unique:users,email,'.$technician->id],
             'password' => ['nullable', 'string', 'min:8', 'max:100'],
-            'role' => ['required', 'in:technician,admin'],
+            'role' => ['required', 'in:technician,admin,cashier'],
         ], [
             'name.required' => 'Nama lengkap wajib diisi.',
             'email.required' => 'Alamat email wajib diisi.',
@@ -95,7 +98,7 @@ class TechnicianController extends Controller
         $technician->name = $validated['name'];
         $technician->email = $validated['email'];
         $technician->role = $validated['role'];
-        if (!empty($validated['password'])) {
+        if (! empty($validated['password'])) {
             $technician->password = $validated['password']; // auto-hash via casts()
         }
         $technician->save();

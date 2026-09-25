@@ -2,11 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
+/**
+ * Masuk dan keluar aplikasi, termasuk pintasan masuk cepat untuk keperluan demo.
+ */
 class AuthController extends Controller
 {
     public function showLogin(): View|RedirectResponse
@@ -32,9 +36,12 @@ class AuthController extends Controller
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
 
-            $roleLabel = Auth::user()->role === 'admin' ? 'Administrator' : 'Teknisi';
+            $roleLabel = match (Auth::user()->role) {
+                'admin' => 'Administrator', 'cashier' => 'Kasir', default => 'Teknisi'
+            };
+
             return redirect()->intended(route('dashboard'))
-                ->with('success', "Selamat datang kembali, " . Auth::user()->name . " ({$roleLabel}).");
+                ->with('success', 'Selamat datang kembali, '.Auth::user()->name." ({$roleLabel}).");
         }
 
         return back()->withErrors([
@@ -43,16 +50,20 @@ class AuthController extends Controller
     }
 
     /**
-     * Helper for instant demo login during assessment
+     * Helper for instant local demo login
      */
     public function quickLogin(string $role): RedirectResponse
     {
-        $email = $role === 'admin' ? 'admin@tracket.test' : 'teknisi@tracket.test';
-        $user = \App\Models\User::where('email', $email)->first();
+        abort_unless(in_array($role, ['admin', 'cashier', 'technician'], true), 404);
+        $email = match ($role) {
+            'admin' => 'admin@tracket.test', 'cashier' => 'kasir@tracket.test', 'technician' => 'teknisi@tracket.test'
+        };
+        $user = User::where('email', $email)->first();
 
         if ($user) {
             Auth::login($user);
             request()->session()->regenerate();
+
             return redirect()->route('dashboard')
                 ->with('success', "Mode Demo: Berhasil masuk sebagai {$user->name}.");
         }

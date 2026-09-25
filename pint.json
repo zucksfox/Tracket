@@ -1,0 +1,17 @@
+{
+    "preset": "laravel",
+    "rules": {
+        "declare_strict_types": false,
+        "final_class": false,
+        "phpdoc_align": {
+            "align": "left"
+        }
+    },
+    "exclude": [
+        "bootstrap/cache",
+        "node_modules",
+        "public/build",
+        "storage",
+        "vendor"
+    ]
+}

@@ -8,6 +8,9 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
+/**
+ * Portal pelacakan publik; dapat dibuka pelanggan tanpa login.
+ */
 class TrackingController extends Controller
 {
     public function index(): View
@@ -33,10 +36,10 @@ class TrackingController extends Controller
                 ->where('service_code', strtoupper($query))
                 ->first();
 
-            if (!$order) {
+            if (! $order) {
                 return view('tracking.index', [
                     'searchedQuery' => $query,
-                    'errorMessage' => "Nomor servis [{$query}] tidak ditemukan di sistem. Mohon periksa kembali huruf dan angka pada nota tanda terima Anda."
+                    'errorMessage' => "Nomor servis [{$query}] tidak ditemukan di sistem. Mohon periksa kembali huruf dan angka pada nota tanda terima Anda.",
                 ]);
             }
 
@@ -48,8 +51,8 @@ class TrackingController extends Controller
         // tetap cocok tanpa membuka data pelanggan lain.
         if (strlen($cleanPhone) >= 8) {
             $customer = Customer::where('phone', $cleanPhone)
-                ->orWhere('phone', '62' . ltrim($cleanPhone, '0'))
-                ->orWhere('phone', '0' . ltrim($cleanPhone, '0'))
+                ->orWhere('phone', '62'.ltrim($cleanPhone, '0'))
+                ->orWhere('phone', '0'.ltrim($cleanPhone, '0'))
                 ->first();
 
             if ($customer) {
@@ -75,7 +78,7 @@ class TrackingController extends Controller
         // Prefix match only, and require the SRV- prefix so a partial phone
         // number can never accidentally resolve to someone else's service.
         if (str_starts_with(strtoupper($query), 'SRV-')) {
-            $fallbackOrder = ServiceOrder::where('service_code', 'like', strtoupper($query) . '%')->first();
+            $fallbackOrder = ServiceOrder::where('service_code', 'like', strtoupper($query).'%')->first();
             if ($fallbackOrder) {
                 return redirect()->route('tracking.show', $fallbackOrder->service_code);
             }
@@ -83,7 +86,7 @@ class TrackingController extends Controller
 
         return view('tracking.index', [
             'searchedQuery' => $query,
-            'errorMessage' => "Data servis tidak ditemukan untuk [{$query}]. Pastikan nomor servis atau nomor WhatsApp yang Anda masukkan sudah benar."
+            'errorMessage' => "Data servis tidak ditemukan untuk [{$query}]. Pastikan nomor servis atau nomor WhatsApp yang Anda masukkan sudah benar.",
         ]);
     }
 

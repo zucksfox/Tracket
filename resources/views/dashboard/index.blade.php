@@ -1,124 +1,50 @@
 @extends('layouts.app')
-
-@section('title', 'Dashboard Operasional')
-
+@section('title', 'Dashboard')
 @section('content')
-<div class="space-y-6">
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-            <h1 class="text-[20px] font-bold t-ink leading-tight">Dashboard Operasional Servis</h1>
-            <p class="text-[12.5px] t-muted mt-0.5">Monitoring alur pengerjaan unit, inventaris suku cadang, dan penyerahan bergaransi.</p>
+<style>
+.dash-head,.dash-panel-head{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}.dash-head{margin-bottom:24px}.dash-title{font-size:26px;font-weight:700;color:var(--body);margin:0}.dash-muted{color:var(--muted);font-size:13px;line-height:1.6}.dash-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px;margin-bottom:24px}.dash-card,.dash-panel{min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px;box-shadow:0 1px 3px #0000000a}.dash-card-label{display:flex;align-items:center;gap:9px;color:var(--muted);font-size:13px}.dash-icon{width:30px;height:30px;padding:6px;background:#E3F3EA;border-radius:8px;color:var(--act)}.dash-value{display:block;font-size:30px;font-weight:650;font-variant-numeric:tabular-nums;margin:12px 0 7px;line-height:1.2;overflow-wrap:anywhere}.dash-value-money{font-size:25px}.dash-card small{font-size:12px;color:var(--muted)}.dash-card a{color:var(--act);text-decoration:underline}.dash-critical .dash-icon{background:#FEF0EE;color:#BA3931}.dash-grid{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(280px,1fr);gap:22px}.dash-panel h2{font-size:16px;font-weight:650;margin:0 0 4px;color:var(--body)}.dash-chart-panel{grid-column:1/-1}.dash-filter{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}.dash-filter label{display:grid;gap:5px;font-size:12px;color:var(--muted)}.dash-filter input{border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--body);padding:8px;font:inherit;min-width:0}.dash-legend{display:flex;gap:18px;flex-wrap:wrap;font-size:12px;margin:20px 0}.dash-key{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:6px;background:var(--series)}.dash-chart-scroll{overflow-x:auto;padding:105px 12px 6px}.dash-chart{display:flex;align-items:flex-end;gap:12px;height:245px;border-bottom:1px solid var(--line);background:repeating-linear-gradient(to top,transparent 0,transparent 60px,var(--line) 61px,transparent 62px);min-width:100%;width:max-content}.dash-day{width:30px;flex:1 0 30px;position:relative;height:100%;display:flex;align-items:flex-end;gap:3px}.dash-bar{width:50%;background:var(--series);height:var(--height);border-radius:4px 4px 0 0}.dash-day:focus{outline:2px solid var(--act);outline-offset:4px}.dash-tip{position:absolute;z-index:10;left:50%;bottom:calc(100% + 9px);transform:translateX(-50%);width:190px;padding:12px;background:var(--surface);color:var(--body);border:1px solid var(--line);border-radius:10px;box-shadow:0 5px 20px #0002;opacity:0;visibility:hidden;pointer-events:none;font-size:12px;line-height:1.8;transition:opacity .15s}.dash-day:first-child .dash-tip{left:0;transform:none}.dash-day:last-child .dash-tip{left:auto;right:0;transform:none}.dash-day:hover .dash-tip,.dash-day:focus .dash-tip{opacity:1;visibility:visible}.dash-axis{display:flex;gap:12px;width:max-content;min-width:100%;padding-top:10px;color:var(--muted);font-size:10px}.dash-axis span{width:30px;flex:1 0 30px;text-align:center}.dash-breakdown{display:flex;gap:30px;align-items:center;margin-top:24px;flex-wrap:wrap}.dash-donut{width:170px;height:170px;border-radius:50%;display:grid;place-items:center;flex-shrink:0}.dash-donut-hole{width:122px;height:122px;border-radius:50%;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center}.dash-donut-hole strong{font-size:30px;font-variant-numeric:tabular-nums}.dash-status-list{flex:1;min-width:180px;list-style:none;padding:0;margin:0}.dash-status-list li{display:flex;justify-content:space-between;gap:12px;padding:7px 0;font-size:13px}.dash-warranty-list{list-style:none;padding:0;margin:18px 0 0}.dash-warranty-list li+li{border-top:1px solid var(--line)}.dash-warranty-list a{display:flex;justify-content:space-between;gap:12px;padding:14px 0;color:var(--body);text-decoration:none}.dash-warranty-list a:hover strong{text-decoration:underline}.dash-warranty-list span{display:block}.dash-expiry{text-align:right;white-space:nowrap;font-size:12px;color:var(--act)}.dash-empty{padding:30px 0;color:var(--muted);font-size:13px}.dash-note{margin:18px 0 0;font-size:12px;color:var(--muted);line-height:1.6}@media(max-width:1050px){.dash-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.dash-grid{grid-template-columns:1fr}}@media(max-width:520px){.dash-metrics{grid-template-columns:1fr}.dash-grid{grid-template-columns:1fr}.dash-card,.dash-panel{padding:18px}.dash-value{font-size:25px}.dash-value-money{font-size:20px}.dash-head{align-items:flex-start}.dash-filter{width:100%}.dash-filter label{flex:1}.dash-filter input{width:100%}.dash-breakdown{justify-content:center}}@media(prefers-reduced-motion:reduce){.dash-tip{transition:none}}
+</style>
+<div class="dash-head">
+    <div><h1 class="dash-title">Dashboard</h1><p class="dash-muted">{{ auth()->user()->isTechnician() ? 'Ringkasan servis yang ditugaskan kepada Anda.' : 'Ringkasan operasional bengkel Anda.' }}</p></div>
+    @if(auth()->user()->canCheckout())<a href="{{ route('services.create') }}" class="btn btn-act">+ Servis Baru</a>@else<a href="{{ route('services.index', ['my_tasks' => 1]) }}" class="btn btn-act">Lihat tugas saya</a>@endif
+</div>
+<div class="dash-metrics">
+    <article class="dash-card"><div class="dash-card-label"><svg class="dash-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 4h8v4H8zM6 6H4v15h16V6h-2M8 13h8M8 17h5"/></svg>Servis Aktif</div><strong class="dash-value">{{ number_format($activeCount, 0, ',', '.') }}</strong><small>Menunggu hingga siap diambil</small></article>
+    @if($isAdmin)<article class="dash-card"><div class="dash-card-label"><svg class="dash-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 9h18M15 14h3"/></svg>Pendapatan Bulan Ini</div><strong class="dash-value dash-value-money">Rp {{ number_format($revenueThisMonth, 0, ',', '.') }}</strong><small>Nilai servis selesai bulan ini</small></article>@endif
+    <article class="dash-card"><div class="dash-card-label"><svg class="dash-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>Servis Selesai</div><strong class="dash-value">{{ number_format($completedThisMonth, 0, ',', '.') }}</strong><small>Bulan ini, hingga hari ini</small></article>
+    <article class="dash-card dash-critical"><div class="dash-card-label"><svg class="dash-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m12 3 10 18H2L12 3zM12 9v5M12 17v1"/></svg>Sparepart Stok Kritis</div><strong class="dash-value">{{ $criticalPartsCount }}</strong><small>Stok ≤ 2 unit, seluruh inventori</small></article>
+</div>
+<div class="dash-grid">
+<section class="dash-panel dash-chart-panel" aria-labelledby="dash-chart-title">
+    <div class="dash-panel-head"><div><h2 id="dash-chart-title">{{ $isAdmin ? 'Pendapatan servis' : 'Periode ringkasan servis' }}</h2><p class="dash-muted">{{ $start->format('d M Y') }} – {{ $end->format('d M Y') }}</p></div>
+    <form class="dash-filter" action="{{ route('dashboard') }}" method="GET"><label for="dash-start">Dari<input id="dash-start" type="date" name="start" value="{{ $start->toDateString() }}" required></label><label for="dash-end">Sampai<input id="dash-end" type="date" name="end" value="{{ $end->toDateString() }}" required></label><button class="btn btn-act" type="submit">Terapkan</button></form></div>
+    @if($isAdmin)
+    @php
+        $chartMax = max(1, ...array_column($chart, 'labor'), ...array_column($chart, 'parts'));
+    @endphp
+    <div class="dash-legend"><span><i class="dash-key" style="--series:#6366F1"></i>Biaya Jasa</span><span><i class="dash-key" style="--series:#F5A742"></i>Pendapatan Sparepart</span><span class="dash-muted">Skala atas Rp {{ number_format($chartMax == 1 ? 0 : $chartMax, 0, ',', '.') }}</span></div>
+    <div class="dash-chart-scroll" role="region" aria-label="Grafik pendapatan harian, gulir horizontal untuk seluruh tanggal" tabindex="0"><div class="dash-chart">
+        @foreach($chart as $point)
+        <div class="dash-day" tabindex="0" role="img" aria-label="{{ $point['date'] }}, Biaya Jasa Rp {{ number_format($point['labor'], 0, ',', '.') }}, Pendapatan Sparepart Rp {{ number_format($point['parts'], 0, ',', '.') }}" aria-describedby="dash-tip-{{ $loop->index }}">
+            <span class="dash-bar" style="--series:#6366F1;--height:{{ $point['labor'] / $chartMax * 100 }}%"></span><span class="dash-bar" style="--series:#F5A742;--height:{{ $point['parts'] / $chartMax * 100 }}%"></span>
+            <span class="dash-tip" id="dash-tip-{{ $loop->index }}" role="tooltip"><strong>{{ $point['date'] }}</strong><br>Biaya Jasa: Rp {{ number_format($point['labor'], 0, ',', '.') }}<br>Sparepart: Rp {{ number_format($point['parts'], 0, ',', '.') }}</span>
         </div>
-        <div class="flex items-center gap-2">
-            @if(auth()->user()->isAdmin())
-            <a href="{{ route('services.create') }}" class="btn btn-act">+ Check-In Unit Baru</a>
-            @endif
-            <a href="{{ route('tracking.index') }}" target="_blank" class="btn btn-ghost">Portal Tracking Publik</a>
-        </div>
-    </div>
-
-    <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3">
-        <a href="{{ route('services.index', ['status' => 'pending']) }}" class="statcard block hover:opacity-90">
-            <div class="t-xs font-semibold t-ink mb-1">Antrian Masuk</div>
-            <div class="statnum">{{ $pendingCount }}</div>
-            <div class="t-[11px] t-muted mt-1">Perlu diagnosa awal</div>
-        </a>
-        <a href="{{ route('services.index', ['status' => 'in_progress']) }}" class="statcard block hover:opacity-90">
-            <div class="t-xs font-semibold t-ink mb-1">Pengerjaan Aktif</div>
-            <div class="statnum">{{ $inProgressCount }}</div>
-            <div class="t-[11px] t-muted mt-1">Sedang ditangani teknisi</div>
-        </a>
-        <a href="{{ route('services.index', ['status' => 'ready']) }}" class="statcard block hover:opacity-90">
-            <div class="t-xs font-semibold t-ink mb-1">Siap Diambil</div>
-            <div class="statnum">{{ $readyCount }}</div>
-            <div class="t-[11px] t-muted mt-1">Menunggu pemilik unit</div>
-        </a>
-        <a href="{{ route('services.index', ['status' => 'completed']) }}" class="statcard block hover:opacity-90">
-            <div class="t-xs font-semibold t-ink mb-1">Selesai Bulan Ini</div>
-            <div class="statnum">{{ $completedThisMonth }}</div>
-            <div class="t-[11px] t-muted mt-1">Unit berhasil diserahkan</div>
-        </a>
-        @if(auth()->user()->isAdmin())
-            <div class="statcard col-span-2 sm:col-span-4 lg:col-span-1">
-                <div class="t-xs font-semibold t-ink mb-1.5">Omzet Bulan Ini</div>
-                <div class="statnum">Rp {{ number_format($revenueThisMonth, 0, ',', '.') }}</div>
-                <div class="t-[11px] t-muted mt-1">Total jasa & sparepart</div>
-            </div>
-        @else
-            <a href="{{ route('spareparts.index', ['filter' => 'critical']) }}" class="statcard col-span-2 sm:col-span-4 lg:col-span-1 block hover:opacity-90">
-                <div class="t-xs font-semibold mb-1.5" style="color: var(--rose);">Stok Part Kritis</div>
-                <div class="statnum">{{ $criticalPartsCount }}</div>
-                <div class="t-[11px] t-muted mt-1">Stok 2 unit atau kurang</div>
-            </a>
-        @endif
-    </div>
-
-    @if($criticalPartsCount > 0)
-        <div class="banner banner-amber flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-                <div class="text-[12.5px] font-bold">Peringatan Kebutuhan Suku Cadang</div>
-                <div class="text-[12px] mt-0.5" style="color: var(--body);">
-                    Terdapat <strong>{{ $criticalPartsCount }}</strong> suku cadang dengan stok menipis (misal: {{ $criticalParts->pluck('name')->take(2)->implode(', ') }}).
-                </div>
-            </div>
-            <a href="{{ route('spareparts.index', ['filter' => 'critical']) }}" class="btn btn-ink shrink-0">Cek & Restock Part</a>
-        </div>
-    @endif
-
-    <div class="panel">
-        <div class="panel-head p-4 flex items-center justify-between">
-            <div>
-                <h2 class="text-[14px] font-bold t-ink">Aktivitas Servis Terkini</h2>
-                <p class="text-[12px] t-muted">Antrian dan pengerjaan unit yang baru diperbarui.</p>
-            </div>
-            <a href="{{ route('services.index') }}" class="text-[12px] font-semibold" style="color: var(--act);">Lihat Semua ({{ $pendingCount + $inProgressCount + $readyCount + $completedThisMonth }})</a>
-        </div>
-
-        <div class="overflow-x-auto">
-            <table class="sheet">
-                <thead>
-                    <tr>
-                        <th>No. Servis</th>
-                        <th>Pelanggan</th>
-                        <th>Perangkat & Gejala</th>
-                        <th>Teknisi</th>
-                        <th class="text-center">Status</th>
-                        <th class="text-right">Tagihan</th>
-                        <th class="text-right">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($recentServices as $srv)
-                        <tr>
-                            <td>
-                                <a href="{{ route('services.show', $srv) }}" class="code-chip hover:underline">{{ $srv->service_code }}</a>
-                                <div class="t-[11px] t-muted mono">{{ $srv->created_at->format('d/m H:i') }}</div>
-                            </td>
-                            <td>
-                                <div class="font-semibold t-body">{{ $srv->customer->name }}</div>
-                                <div class="mono t-[11px] t-muted">{{ $srv->customer->phone }}</div>
-                            </td>
-                            <td class="max-w-xs">
-                                <div class="font-medium truncate">{{ $srv->device_name }}</div>
-                                <div class="t-[11px] t-muted truncate">{{ $srv->issue_description }}</div>
-                            </td>
-                            <td>{{ $srv->technician ? $srv->technician->name : '-' }}</td>
-                            <td class="text-center">
-                                <span class="stamp {{ $srv->status_meta['bg'] }}">{{ $srv->status_meta['label'] }}</span>
-                            </td>
-                            <td class="text-right mono font-semibold t-body">Rp {{ number_format($srv->total_cost, 0, ',', '.') }}</td>
-                            <td class="text-right">
-                                <a href="{{ route('services.show', $srv) }}" class="btn btn-ghost" style="padding: 5px 10px;">Proses</a>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="7" class="py-10 text-center t-muted">Belum ada riwayat aktivitas servis.</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-    </div>
+        @endforeach
+    </div><div class="dash-axis" aria-hidden="true">@foreach($chart as $point)<span>{{ $point['label'] }}</span>@endforeach</div></div>
+    @if(array_sum(array_column($chart, 'labor')) + array_sum(array_column($chart, 'parts')) == 0)<p class="dash-note">Belum ada pendapatan servis selesai pada periode ini.</p>@endif
+    <p class="dash-note">Hanya servis berstatus selesai. Jasa dari biaya jasa; sparepart dari subtotal komponen yang tercatat, bukan harga katalog saat ini. Tanggal memakai pembaruan terakhir (updated_at), karena tanggal pembayaran belum dicatat terpisah.</p>
+    @else<p class="dash-note">Filter tanggal berlaku untuk status servis di bawah. Informasi keuangan hanya tersedia untuk administrator.</p>@endif
+</section>
+<section class="dash-panel" aria-labelledby="dash-status-title"><h2 id="dash-status-title">Status servis</h2><p class="dash-muted">Servis masuk pada periode terpilih, menurut status saat ini.</p>
+    @php
+        $breakdownTotal = array_sum(array_column($breakdown, 'count')); $cursor = 0; $stops = [];
+        foreach ($breakdown as $segment) { $next = $cursor + ($breakdownTotal ? $segment['count'] / $breakdownTotal * 100 : 0); if ($segment['count']) $stops[] = $segment['color'].' '.$cursor.'% '.$next.'%'; $cursor = $next; }
+    @endphp
+    <div class="dash-breakdown"><div class="dash-donut" aria-hidden="true" style="background:{{ $breakdownTotal ? 'conic-gradient('.implode(', ', $stops).')' : 'var(--line)' }}"><div class="dash-donut-hole"><strong>{{ $breakdownTotal }}</strong><span class="dash-muted">servis masuk</span></div></div><ul class="dash-status-list">@foreach($breakdown as $segment)<li><span><i class="dash-key" style="--series:{{ $segment['color'] }}"></i>{{ $segment['label'] }}</span><strong>{{ $segment['count'] }}</strong></li>@endforeach</ul></div>
+    <p class="dash-note">Kategori kerusakan belum tersedia. Grafik menggunakan kolom status, bukan teks keluhan pelanggan.</p>
+</section>
+<section class="dash-panel" aria-labelledby="dash-warranty-title"><h2 id="dash-warranty-title">Garansi aktif</h2><p class="dash-muted">Lima garansi terdekat berakhir, per hari ini.</p><ul class="dash-warranty-list">
+    @forelse($warranties as $order)<li><a href="{{ route('services.show', $order) }}"><div><strong>{{ $order->customer->name }}</strong><span class="dash-muted">{{ $order->device_name }}</span><span class="dash-muted">{{ $order->service_code }}</span></div><div class="dash-expiry">{{ $order->warranty_expires_at->format('d M Y') }}<span>{{ $order->warranty_info['days_remaining'] }} hari tersisa</span></div></a></li>@empty<li class="dash-empty">Belum ada garansi aktif{{ $isAdmin ? '.' : ' untuk servis Anda.' }}</li>@endforelse
+</ul></section>
 </div>
 @endsection

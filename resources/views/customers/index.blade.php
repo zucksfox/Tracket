@@ -6,16 +6,16 @@
 <div class="space-y-5">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-            <h1 class="text-[20px] font-bold t-ink tracking-tight">Data Pelanggan Bengkel</h1>
-            <p class="text-[12.5px] t-muted mt-0.5">Kelola daftar kontak pelanggan dan riwayat pengerjaan unit.</p>
+            <h1 class="text-2xl font-bold t-ink tracking-tight">Pelanggan</h1>
+            <p class="text-[13px] t-muted mt-0.5">Kelola daftar kontak pelanggan dan riwayat pengerjaan unit.</p>
         </div>
         <a href="{{ route('customers.create') }}" class="btn btn-act">Tambah Pelanggan Baru</a>
     </div>
 
-    <div class="panel p-4">
+    <div class="panel p-5">
         <form action="{{ route('customers.index') }}" method="GET" class="flex flex-col sm:flex-row gap-3">
             <div class="flex-1">
-                <input type="text" name="search" value="{{ request('search') }}" class="field"
+                <input aria-label="Cari pelanggan" type="text" name="search" value="{{ request('search') }}" class="field"
                     placeholder="Cari berdasarkan nama atau no. telepon / WhatsApp...">
             </div>
             <div class="flex gap-2">
@@ -27,7 +27,11 @@
         </form>
     </div>
 
-    <div class="panel overflow-hidden">
+    <div class="panel overflow-hidden p-5">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-5">
+            <h2 class="text-base font-semibold t-ink">Daftar pelanggan</h2>
+            <span class="text-[13px] t-muted">{{ $customers->total() }} hasil</span>
+        </div>
         <div class="overflow-x-auto">
             <table class="sheet">
                 <thead>
@@ -44,9 +48,9 @@
                         <tr>
                             <td>
                                 <div class="font-semibold t-body">{{ $customer->name }}</div>
-                                <div class="mono text-[11px] t-muted">ID #CST-{{ str_pad($customer->id, 4, '0', STR_PAD_LEFT) }}</div>
+                                <div class="tabular-nums text-[13px] t-muted">ID #CST-{{ str_pad($customer->id, 4, '0', STR_PAD_LEFT) }}</div>
                             </td>
-                            <td class="mono">
+                            <td class="tabular-nums">
                                 <a href="https://wa.me/{{ preg_replace('/^0/', '62', preg_replace('/[^0-9]/', '', $customer->phone)) }}" target="_blank"
                                     class="hover:underline" style="color: var(--act);">
                                     {{ $customer->phone }}
@@ -54,15 +58,15 @@
                             </td>
                             <td class="t-muted max-w-xs truncate">{{ $customer->address ?: '-' }}</td>
                             <td class="text-center">
-                                <span class="mono text-[12px] font-semibold t-ink px-2 py-0.5 rounded-[3px]" style="border: 1px solid var(--line);">{{ $customer->service_orders_count }} unit</span>
+                                <span class="tabular-nums text-[13px] font-semibold t-ink px-2 py-0.5 rounded-lg" style="border: 1px solid var(--line);">{{ $customer->service_orders_count }} unit</span>
                             </td>
                             <td class="text-right">
                                 <div class="flex justify-end gap-2">
-                                    <a href="{{ route('customers.edit', $customer) }}" class="btn btn-ghost" style="padding: 6px 10px; font-size: 11.5px;">Edit</a>
+                                    <a href="{{ route('customers.edit', $customer) }}" class="btn btn-ghost" style="padding: 6px 10px; font-size: 13px;">Edit</a>
                                     <form action="{{ route('customers.destroy', $customer) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data pelanggan ini?');">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="btn btn-danger" style="padding: 6px 10px; font-size: 11.5px;">Hapus</button>
+                                        <button type="submit" class="btn btn-danger" style="padding: 6px 10px; font-size: 13px;">Hapus</button>
                                     </form>
                                 </div>
                             </td>

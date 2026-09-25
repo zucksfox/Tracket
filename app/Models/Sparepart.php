@@ -2,13 +2,16 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Sparepart extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity, SoftDeletes;
 
     protected $fillable = [
         'part_code',
@@ -36,5 +39,15 @@ class Sparepart extends Model
     public function serviceOrderParts(): HasMany
     {
         return $this->hasMany(ServiceOrderPart::class);
+    }
+
+    /**
+     * Jejak audit suku cadang ini (relasi polymorphic dari ActivityLog).
+     *
+     * @return MorphMany<ActivityLog, $this>
+     */
+    public function activityLogs(): MorphMany
+    {
+        return $this->morphMany(ActivityLog::class, 'subject')->latest('id');
     }
 }

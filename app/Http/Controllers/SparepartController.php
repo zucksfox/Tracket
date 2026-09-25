@@ -7,6 +7,9 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
+/**
+ * Pengelolaan data suku cadang beserta stoknya.
+ */
 class SparepartController extends Controller
 {
     public function index(Request $request): View
@@ -17,8 +20,8 @@ class SparepartController extends Controller
             $search = $request->get('search');
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('part_code', 'like', "%{$search}%")
-                  ->orWhere('category', 'like', "%{$search}%");
+                    ->orWhere('part_code', 'like', "%{$search}%")
+                    ->orWhere('category', 'like', "%{$search}%");
             });
         }
 
@@ -68,7 +71,7 @@ class SparepartController extends Controller
     public function update(Request $request, Sparepart $sparepart): RedirectResponse
     {
         $validated = $request->validate([
-            'part_code' => ['required', 'string', 'max:50', 'unique:spareparts,part_code,' . $sparepart->id],
+            'part_code' => ['required', 'string', 'max:50', 'unique:spareparts,part_code,'.$sparepart->id],
             'name' => ['required', 'string', 'max:150'],
             'category' => ['required', 'string', 'max:100'],
             'stock' => ['required', 'integer', 'min:0'],
@@ -88,6 +91,7 @@ class SparepartController extends Controller
         }
 
         $sparepart->delete();
+
         return redirect()->route('spareparts.index')->with('success', 'Suku cadang berhasil dihapus dari sistem.');
     }
 }

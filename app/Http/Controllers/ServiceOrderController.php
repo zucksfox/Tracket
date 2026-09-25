@@ -11,7 +11,9 @@ use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 class ServiceOrderController extends Controller
 {
@@ -34,12 +36,12 @@ class ServiceOrderController extends Controller
             $s = $request->search;
             $query->where(function ($q) use ($s) {
                 $q->where('service_code', 'like', "%{$s}%")
-                  ->orWhere('device_name', 'like', "%{$s}%")
-                  ->orWhere('device_serial', 'like', "%{$s}%")
-                  ->orWhereHas('customer', function ($cq) use ($s) {
-                      $cq->where('name', 'like', "%{$s}%")
-                         ->orWhere('phone', 'like', "%{$s}%");
-                  });
+                    ->orWhere('device_name', 'like', "%{$s}%")
+                    ->orWhere('device_serial', 'like', "%{$s}%")
+                    ->orWhereHas('customer', function ($cq) use ($s) {
+                        $cq->where('name', 'like', "%{$s}%")
+                            ->orWhere('phone', 'like', "%{$s}%");
+                    });
             });
         }
 
@@ -60,7 +62,8 @@ class ServiceOrderController extends Controller
 
     public function create(): View
     {
-        $technicians = User::where('role', 'technician')->get();
+        $technicians = User::whereIn('role', ['admin', 'technician'])->orderBy('name')->get();
+
         return view('services.create', compact('technicians'));
     }
 
@@ -79,7 +82,7 @@ class ServiceOrderController extends Controller
             'issue_description' => ['required', 'string'],
             'accessories_included' => ['nullable', 'string', 'max:255'],
             'labor_cost' => ['nullable', 'numeric', 'min:0'],
-            'technician_id' => ['nullable', 'exists:users,id'],
+            'technician_id' => ['nullable', Rule::exists('users', 'id')->whereIn('role', ['admin', 'technician'])],
         ], [
             'device_name.required' => 'Nama & tipe perangkat wajib diisi.',
             'issue_description.required' => 'Deskripsi keluhan kerusakan wajib dicatat.',
@@ -87,14 +90,13 @@ class ServiceOrderController extends Controller
             'customer_phone.required_without' => 'Nomor telepon pelanggan wajib diisi jika pelanggan belum terdaftar.',
         ]);
 
-        // Normalisasi & validasi nomor HP untuk pelanggan baru SEBELUM
-        // transaksi DB apa pun berjalan, agar pesan error bersih.
-        // Terima 08xx, +62-8xx (format kontak WhatsApp), 628xx, dan 8xx.
+        // Check-in memakai format lokal yang konsisten: angka saja, awalan 08,
+        // tanpa +62, 62, spasi, titik, atau tanda hubung. Operator bebas;
+        // nomor Indonesia memang tidak boleh divalidasi berdasarkan prefix tertentu.
         $phone = null;
-        if (empty($validated['customer_id']) && !empty($validated['customer_phone'])) {
-            $phone = preg_replace('/[^0-9]/', '', $validated['customer_phone']);
-            $phone = preg_replace('/^(62|0)+/', '0', $phone); // 62812... atau 0081... -> 0812...
-            if (strlen($phone) < 9 || strlen($phone) > 13 || !str_starts_with($phone, '08')) {
+        if (empty($validated['customer_id']) && ! empty($validated['customer_phone'])) {
+            $phone = $validated['customer_phone'];
+            if (! preg_match('/^08[0-9]{8,11}$/', $phone)) {
                 return back()
                     ->with('error', 'Format nomor HP tidak dikenal. Gunakan awalan 08 tanpa tanda hubung, contoh: 081234567890.')
                     ->withInput();
@@ -103,14 +105,14 @@ class ServiceOrderController extends Controller
 
         $serviceOrder = DB::transaction(function () use ($validated, $phone) {
             // Find or create customer
-            if (!empty($validated['customer_id'])) {
+            if (! empty($validated['customer_id'])) {
                 $customerId = $validated['customer_id'];
             } else {
                 // Cegah duplikasi pelanggan akibat beda penulisan nomor
                 // (0812..., 62812..., +62...).
                 $customer = Customer::where('phone', $phone)
-                    ->orWhere('phone', '62' . ltrim($phone, '0'))
-                    ->orWhere('phone', '0' . ltrim($phone, '0'))
+                    ->orWhere('phone', '62'.ltrim($phone, '0'))
+                    ->orWhere('phone', '0'.ltrim($phone, '0'))
                     ->first();
 
                 if ($customer) {
@@ -160,7 +162,7 @@ class ServiceOrderController extends Controller
         // sebagai pilihan disabled agar teknisi tahu partnya TERDAFTAR
         // tapi HABIS, bukan belum diinput admin.
         $availableSpareparts = Sparepart::orderBy('category')->orderBy('name')->get();
-        $technicians = User::where('role', 'technician')->get();
+        $technicians = User::whereIn('role', ['admin', 'technician'])->orderBy('name')->get();
 
         return view('services.show', compact('serviceOrder', 'availableSpareparts', 'technicians'));
     }
@@ -173,28 +175,38 @@ class ServiceOrderController extends Controller
         $validated = $request->validate([
             'status' => ['required', 'in:pending,diagnosing,in_progress,ready,completed,cancelled'],
             'technician_notes' => ['nullable', 'string'],
-            'technician_id' => ['nullable', 'exists:users,id'],
+            'technician_id' => ['nullable', Rule::exists('users', 'id')->whereIn('role', ['admin', 'technician'])],
             'labor_cost' => ['nullable', 'numeric', 'min:0'],
         ]);
 
-        $serviceOrder->status = $validated['status'];
-
-        if (isset($validated['technician_notes'])) {
-            $serviceOrder->technician_notes = $validated['technician_notes'];
+        if ($request->user()?->isTechnician() && in_array($validated['status'], ['completed', 'cancelled'], true)) {
+            abort(403, 'Teknisi harus menyerahkan proses selesai dan pembatalan kepada Admin/Kasir.');
         }
 
-        if (isset($validated['technician_id'])) {
-            $serviceOrder->technician_id = $validated['technician_id'];
-        }
+        DB::transaction(function () use (&$serviceOrder, $validated) {
+            $serviceOrder = $this->lockEditableOrder($serviceOrder);
+            $next = ['pending' => 'diagnosing', 'diagnosing' => 'in_progress', 'in_progress' => 'ready'];
+            abort_unless($validated['status'] === $serviceOrder->status || ($next[$serviceOrder->status] ?? null) === $validated['status'], 422, 'Perubahan status tidak diizinkan. Gunakan checkout untuk pembayaran atau aksi pembatalan.');
+            $serviceOrder->status = $validated['status'];
 
-        if (isset($validated['labor_cost'])) {
-            $serviceOrder->labor_cost = (float) $validated['labor_cost'];
-        }
+            if (isset($validated['technician_notes'])) {
+                $serviceOrder->technician_notes = $validated['technician_notes'];
+            }
 
-        $serviceOrder->save();
-        $serviceOrder->recalculateTotal();
+            if (isset($validated['technician_id'])) {
+                $serviceOrder->technician_id = $validated['technician_id'];
+            }
 
-        return back()->with('success', "Status servis {$serviceOrder->service_code} berhasil diperbarui menjadi: " . $serviceOrder->status_meta['label']);
+            if (isset($validated['labor_cost'])) {
+                $serviceOrder->labor_cost = (float) $validated['labor_cost'];
+            }
+
+            $serviceOrder->save();
+            $serviceOrder->recalculateTotal();
+
+        });
+
+        return back()->with('success', "Status servis {$serviceOrder->service_code} berhasil diperbarui menjadi: ".$serviceOrder->status_meta['label']);
     }
 
     /**
@@ -212,6 +224,7 @@ class ServiceOrderController extends Controller
 
         try {
             DB::transaction(function () use ($serviceOrder, $validated) {
+                $serviceOrder = $this->lockEditableOrder($serviceOrder);
                 // Lock sparepart row for update
                 $sparepart = Sparepart::where('id', $validated['sparepart_id'])->lockForUpdate()->firstOrFail();
 
@@ -250,6 +263,8 @@ class ServiceOrderController extends Controller
             });
 
             return back()->with('success', 'Suku cadang berhasil ditambahkan dan stok gudang otomatis terpotong.');
+        } catch (HttpExceptionInterface $e) {
+            throw $e;
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
         }
@@ -261,6 +276,8 @@ class ServiceOrderController extends Controller
     public function removePart(ServiceOrder $serviceOrder, ServiceOrderPart $orderPart): RedirectResponse
     {
         DB::transaction(function () use ($serviceOrder, $orderPart) {
+            $serviceOrder = $this->lockEditableOrder($serviceOrder);
+            $orderPart = $serviceOrder->orderParts()->whereKey($orderPart->id)->lockForUpdate()->firstOrFail();
             // Restore stock to sparepart
             $sparepart = Sparepart::where('id', $orderPart->sparepart_id)->lockForUpdate()->first();
             if ($sparepart) {
@@ -283,31 +300,47 @@ class ServiceOrderController extends Controller
      */
     public function checkout(Request $request, ServiceOrder $serviceOrder): RedirectResponse
     {
+        abort_unless($request->user()?->canCheckout(), 403);
+
         $validated = $request->validate([
-            'warranty_days' => ['required', 'integer', 'min:0'],
+            'warranty_days' => ['required', 'integer', 'min:0', 'max:3650'],
+            'payment_method' => ['required', 'in:cash,qr'],
+            'confirm_payment' => ['nullable', 'boolean'],
             'technician_notes' => ['nullable', 'string'],
         ], [
             'warranty_days.required' => 'Durasi garansi wajib diisi (isi 0 bila tanpa garansi).',
         ]);
 
+        if ($validated['payment_method'] === 'qr' && ! $request->boolean('confirm_payment')) {
+            return back()->withInput()->with('error', 'Pembayaran belum dikonfirmasi. Periksa transfer masuk sebelum menandai lunas.');
+        }
+
         $days = (int) $validated['warranty_days'];
         $expiryDate = $days > 0 ? Carbon::today()->addDays($days)->toDateString() : null;
 
-        $serviceOrder->status = 'completed';
-        // Tarif jasa SELALU dibaca dari DB (satu sumber kebenaran) yang sudah
-        // disimpan lewat form "Catatan Teknisi". Tidak lagi menerima nilai
-        // dari hidden input yang bisa basi saat halaman terbuka lama.
-        $serviceOrder->labor_cost = (float) $serviceOrder->labor_cost;
-        $serviceOrder->warranty_days = $days;
-        $serviceOrder->warranty_expires_at = $expiryDate;
-        if (!empty($validated['technician_notes'])) {
-            $serviceOrder->technician_notes = $validated['technician_notes'];
-        }
-        $serviceOrder->save();
-        $serviceOrder->recalculateTotal();
+        DB::transaction(function () use (&$serviceOrder, $validated, $days, $expiryDate) {
+            $serviceOrder = ServiceOrder::whereKey($serviceOrder->id)->lockForUpdate()->firstOrFail();
+            abort_unless($serviceOrder->status === 'ready', 422, 'Checkout hanya untuk servis siap diambil.');
+            $serviceOrder->payment_status = 'paid';
+            $serviceOrder->payment_method = $validated['payment_method'];
+            $serviceOrder->paid_at = now();
+            $serviceOrder->status = 'completed';
+            // Tarif jasa SELALU dibaca dari DB (satu sumber kebenaran) yang sudah
+            // disimpan lewat form "Catatan Teknisi". Tidak lagi menerima nilai
+            // dari hidden input yang bisa basi saat halaman terbuka lama.
+            $serviceOrder->labor_cost = (float) $serviceOrder->labor_cost;
+            $serviceOrder->warranty_days = $days;
+            $serviceOrder->warranty_expires_at = $expiryDate;
+            if (auth()->user()->canRepair() && ! empty($validated['technician_notes'])) {
+                $serviceOrder->technician_notes = $validated['technician_notes'];
+            }
+            $serviceOrder->save();
+            $serviceOrder->recalculateTotal();
+
+        });
 
         return redirect()->route('services.show', $serviceOrder)
-            ->with('success', "Unit berhasil diserahkan ke pelanggan! Tagihan akhir Rp " . number_format($serviceOrder->total_cost, 0, ',', '.') . ". Masa garansi {$days} hari aktif hingga " . ($expiryDate ? Carbon::parse($expiryDate)->isoFormat('D MMMM Y') : 'tanpa garansi') . ".");
+            ->with('success', 'Unit berhasil diserahkan ke pelanggan! Tagihan akhir Rp '.number_format($serviceOrder->total_cost, 0, ',', '.').". Masa garansi {$days} hari aktif hingga ".($expiryDate ? Carbon::parse($expiryDate)->isoFormat('D MMMM Y') : 'tanpa garansi').'.');
     }
 
     /**
@@ -315,9 +348,12 @@ class ServiceOrderController extends Controller
      */
     public function cancel(Request $request, ServiceOrder $serviceOrder): RedirectResponse
     {
+        abort_unless($request->user()?->isAdmin(), 403, 'Hanya Admin/Kasir yang dapat membatalkan servis dan mengembalikan stok.');
+
         $returnedSummary = [];
 
         DB::transaction(function () use ($serviceOrder, &$returnedSummary) {
+            $serviceOrder = $this->lockEditableOrder($serviceOrder);
             // Rollback stock for all attached parts
             foreach ($serviceOrder->orderParts as $part) {
                 $sparepart = Sparepart::where('id', $part->sparepart_id)->lockForUpdate()->first();
@@ -333,19 +369,28 @@ class ServiceOrderController extends Controller
         });
 
         $detail = count($returnedSummary) > 0
-            ? ' Dikembalikan ke stok: ' . implode(', ', $returnedSummary) . '.'
+            ? ' Dikembalikan ke stok: '.implode(', ', $returnedSummary).'.'
             : ' Tidak ada suku cadang yang perlu dikembalikan.';
 
         return redirect()->route('services.show', $serviceOrder)
-            ->with('info', 'Pengerjaan servis dibatalkan.' . $detail);
+            ->with('info', 'Pengerjaan servis dibatalkan.'.$detail);
     }
 
     /**
      * Print View: Check-In Receipt
      */
+    private function lockEditableOrder(ServiceOrder $serviceOrder): ServiceOrder
+    {
+        $locked = ServiceOrder::whereKey($serviceOrder->id)->lockForUpdate()->firstOrFail();
+        abort_if(in_array($locked->status, ['completed', 'cancelled'], true), 422, 'Servis sudah ditutup dan tidak dapat diubah.');
+
+        return $locked;
+    }
+
     public function printReceipt(ServiceOrder $serviceOrder): View
     {
         $serviceOrder->load(['customer', 'technician']);
+
         return view('services.print_receipt', compact('serviceOrder'));
     }
 
@@ -355,6 +400,7 @@ class ServiceOrderController extends Controller
     public function printInvoice(ServiceOrder $serviceOrder): View
     {
         $serviceOrder->load(['customer', 'technician', 'orderParts.sparepart']);
+
         return view('services.print_invoice', compact('serviceOrder'));
     }
 }

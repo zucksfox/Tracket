@@ -6,6 +6,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * Satu baris suku cadang yang dipasang pada sebuah servis.
+ *
+ * Tabel ini menyimpan harga satuan dan subtotal pada saat pemasangan, bukan
+ * merujuk harga katalog terkini, supaya nota lama tidak berubah nilainya
+ * ketika harga suku cadang dinaikkan di kemudian hari.
+ */
 class ServiceOrderPart extends Model
 {
     use HasFactory;

@@ -43,6 +43,21 @@ class User extends Authenticatable
         return $this->role === 'technician';
     }
 
+    public function isCashier(): bool
+    {
+        return $this->role === 'cashier';
+    }
+
+    public function canCheckout(): bool
+    {
+        return $this->isAdmin() || $this->isCashier();
+    }
+
+    public function canRepair(): bool
+    {
+        return $this->isAdmin() || $this->isTechnician();
+    }
+
     public function assignedServices(): HasMany
     {
         return $this->hasMany(ServiceOrder::class, 'technician_id');

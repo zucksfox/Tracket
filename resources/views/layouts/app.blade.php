@@ -6,100 +6,97 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Dashboard') | Tracket</title>
     <link rel="stylesheet" href="/fonts/fonts.css">
-    @include('layouts.theme')
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @include('layouts.theme')
+    @stack('styles')
 </head>
-<body>
-    <header class="masthead no-print">
-        <div class="masthead-inner max-w-[1180px] mx-auto px-4 sm:px-6">
-            <div class="flex items-center justify-between h-[60px] gap-3">
-                <a href="{{ route('dashboard') }}" class="flex items-center gap-3 shrink-0">
-                    <span class="brand-mark">ST</span>
-                    <span class="leading-tight">
-                        <span class="block font-semibold text-[15px] t-ink">Tracket</span>
-                        <span class="mono block text-[11px] t-muted">Bengkel Servis & Garansi</span>
-                    </span>
-                </a>
-
-                <nav class="hidden md:flex items-center gap-1">
-                    <a href="{{ route('dashboard') }}" class="navlink {{ request()->routeIs('dashboard') ? 'active' : '' }}">Dashboard</a>
-                    @if(auth()->user()->isAdmin())
-                    <a href="{{ route('services.create') }}" class="navlink {{ request()->routeIs('services.create') ? 'active' : '' }}">Check-In Servis</a>
-                    @endif
-                    <a href="{{ route('services.index') }}" class="navlink {{ request()->routeIs('services.index') || request()->routeIs('services.show') ? 'active' : '' }}">Daftar Servis</a>
-                    @if(auth()->user()->isAdmin())
-                    <a href="{{ route('customers.index') }}" class="navlink {{ request()->routeIs('customers.*') ? 'active' : '' }}">Pelanggan</a>
-                    @endif
-                    <a href="{{ route('spareparts.index') }}" class="navlink {{ request()->routeIs('spareparts.*') ? 'active' : '' }}">Suku Cadang</a>
-                    @if(auth()->user()->isAdmin())
-                    <a href="{{ route('technicians.index') }}" class="navlink {{ request()->routeIs('technicians.*') ? 'active' : '' }}">Teknisi</a>
-                    @endif
-                    <a href="{{ route('tracking.index') }}" target="_blank" class="navlink t-ink" style="border-color: var(--line);">Portal Pelanggan</a>
-                </nav>
-
-                <div class="flex items-center gap-3">
-                    <div class="text-right hidden sm:block leading-tight">
-                        <div class="text-[12.5px] font-semibold t-body">{{ auth()->user()->name }}</div>
-                        <div class="text-[11px]">
-                            @if(auth()->user()->isAdmin())
-                                <span class="t-ink font-semibold">Administrator</span>
-                            @else
-                                <span style="color: var(--act-deep); font-weight:600;">Teknisi Servis</span>
-                            @endif
-                        </div>
-                    </div>
-                    <form action="{{ route('logout') }}" method="POST">
-                        @csrf
-                        <button type="submit" title="Keluar" class="btn btn-ghost" style="padding: 6px 10px;">Keluar</button>
-                    </form>
+<body class="app-shell" data-user-id="{{ auth()->id() }}" data-status-motion="{{ session('success') ? '1' : '0' }}" data-error-fields='@json($errors->keys())'>
+@php
+    $user = auth()->user();
+    $isAdmin = $user->isAdmin();
+    $criticalNotice = \App\Models\Sparepart::where('stock', '<=', 2)->count();
+    $readyNotice = \App\Models\ServiceOrder::where('status', 'ready')->when($user->isTechnician(), fn($q) => $q->where('technician_id', $user->id))->count();
+    $groups = [
+        'OPERASIONAL' => [
+            ['Dashboard', route('dashboard'), 'dashboard', request()->routeIs('dashboard')],
+            ['Servis Masuk', route('services.index'), 'service', request()->routeIs('services.*') && !request()->boolean('my_tasks') && !request()->filled('status')],
+            ['Antrian Teknisi', route('services.index', $user->isTechnician() ? ['my_tasks' => 1] : ['status' => 'in_progress']), 'clock', request()->routeIs('services.index') && (request()->boolean('my_tasks') || request('status') === 'in_progress')],
+        ],
+        'INVENTORI' => [
+            ['Suku Cadang', route('spareparts.index'), 'parts', request()->routeIs('spareparts.*')],
+        ],
+    ];
+    if ($isAdmin) {
+        $groups['OPERASIONAL'][] = ['Pelanggan', route('customers.index'), 'people', request()->routeIs('customers.*')];
+        if (Route::has('reports.index')) {
+            $groups['KEUANGAN'] = [
+                ['Laporan', route('reports.index'), 'report', request()->routeIs('reports.*') && !request()->has('transactions')],
+                ['Riwayat Transaksi', route('reports.index', ['transactions' => 1]).'#transactions', 'clock', request()->routeIs('reports.*') && request()->has('transactions')],
+            ];
+        }
+        $groups['SISTEM'] = [['Manajemen Pengguna', route('technicians.index'), 'people', request()->routeIs('technicians.*')]];
+    }
+@endphp
+<a class="skip-link" href="#main-content">Langsung ke konten</a>
+<div class="mobile-backdrop no-print" data-nav-backdrop hidden></div>
+<aside class="app-sidebar no-print" aria-label="Navigasi utama">
+    <div class="sidebar-head"><a href="{{ route('dashboard') }}" class="sidebar-logo" aria-label="Tracket"><img src="/brand.svg" alt="Tracket" width="190" height="38"></a></div>
+    <nav class="app-navigation" id="nav-panel" aria-label="Menu aplikasi">
+            @foreach($groups as $heading => $links)
+                <div class="nav-group-title">{{ $heading }}</div>
+                @foreach($links as [$label, $url, $icon, $active])
+                <a href="{{ $url }}" class="navlink {{ $active ? 'active' : '' }}" @if($active) aria-current="page" @endif>@include('layouts.icon', ['name'=>$icon])<span>{{ $label }}</span></a>
+                @endforeach
+            @endforeach
+            <a href="{{ route('tracking.index') }}" class="navlink navlink-portal">@include('layouts.icon', ['name'=>'portal'])<span>Portal pelanggan</span></a>
+    </nav>
+</aside>
+<header class="app-topbar no-print">
+    <button type="button" class="icon-button mobile-menu-button" data-nav-toggle aria-controls="nav-panel" aria-expanded="false" aria-label="Buka menu">@include('layouts.icon', ['name'=>'menu'])</button>
+    <div class="topbar-title">@yield('title', 'Dashboard')</div>
+    <div class="topbar-actions">
+        <form action="{{ route('services.index') }}" method="GET" class="topbar-search" role="search"><label for="global-search" class="sr-only">Cari servis atau pelanggan</label><input id="global-search" name="search" type="search" placeholder="Cari servis atau pelanggan" value="{{ request('search') }}"></form>
+        <details class="notification-menu">
+            <summary class="icon-button notification-trigger" aria-label="Pemberitahuan bengkel" title="Pemberitahuan bengkel">@include('layouts.icon', ['name'=>'bell'])<span class="notification-badge" data-notification-badge hidden>0</span></summary>
+            <div class="notification-panel"><h2>Perlu perhatian</h2><p>Ringkasan kondisi bengkel saat ini.</p><div data-notification-list><a href="{{ route('spareparts.index', ['filter'=>'critical']) }}">{{ $criticalNotice }} suku cadang stok kritis</a></div><a href="{{ route('services.index', array_filter(['status'=>'ready', 'my_tasks'=>$user->isTechnician() ? 1 : null])) }}">{{ $readyNotice }} servis siap diambil</a></div>
+        </details>
+        <div class="account-menu">
+            <button type="button" class="topbar-user" data-account-toggle aria-haspopup="menu" aria-expanded="false" aria-controls="account-panel">
+                <span class="user-initial" aria-hidden="true">{{ mb_strtoupper(mb_substr($user->name, 0, 1)) }}</span>
+                <span class="profile-copy"><span class="profile-name">{{ $user->name }}</span><span class="profile-role">{{ $isAdmin ? 'Administrator' : ($user->isCashier() ? 'Kasir' : 'Teknisi servis') }}</span></span>
+                <span class="account-caret" aria-hidden="true">@include('layouts.icon', ['name'=>'chevron'])</span>
+            </button>
+            <div class="account-panel" id="account-panel" role="menu" hidden>
+                <div class="account-panel-head">
+                    <span class="user-initial" aria-hidden="true">{{ mb_strtoupper(mb_substr($user->name, 0, 1)) }}</span>
+                    <div class="profile-copy"><div class="profile-name">{{ $user->name }}</div><div class="profile-role">{{ $isAdmin ? 'Administrator' : ($user->isCashier() ? 'Kasir' : 'Teknisi servis') }}</div></div>
                 </div>
+                <button type="button" class="account-action account-action-danger" role="menuitem" data-logout-open>Keluar akun</button>
             </div>
         </div>
-
-        <div class="md:hidden flex overflow-x-auto px-4 py-2 gap-2 border-t" style="border-color: var(--line-soft); background: var(--paper);">
-            <a href="{{ route('dashboard') }}" class="navlink {{ request()->routeIs('dashboard') ? 'active' : '' }}">Dashboard</a>
-            @if(auth()->user()->isAdmin())
-            <a href="{{ route('services.create') }}" class="navlink {{ request()->routeIs('services.create') ? 'active' : '' }}">Check-In</a>
-            @endif
-            <a href="{{ route('services.index') }}" class="navlink {{ request()->routeIs('services.index') ? 'active' : '' }}">Servis</a>
-            <a href="{{ route('spareparts.index') }}" class="navlink {{ request()->routeIs('spareparts.*') ? 'active' : '' }}">Suku Cadang</a>
-            @if(auth()->user()->isAdmin())
-            <a href="{{ route('technicians.index') }}" class="navlink {{ request()->routeIs('technicians.*') ? 'active' : '' }}">Teknisi</a>
-            @endif
-            <a href="{{ route('tracking.index') }}" target="_blank" class="navlink t-ink">Tracking</a>
+    </div>
+</header>
+<div class="stock-toast-region" data-stock-toast-region aria-live="polite" aria-atomic="true"></div>
+<dialog class="confirm-dialog" id="logout-dialog" aria-labelledby="logout-title">
+    <form method="dialog" class="confirm-card">
+        <h2 id="logout-title">Keluar akun?</h2>
+        <p>Sesi {{ $user->name }} akan ditutup. Masuk lagi kapan saja dengan akun yang sama.</p>
+        <div class="confirm-actions">
+            <button type="submit" class="btn btn-ink" value="cancel">Batal</button>
+            <button type="button" class="btn btn-danger" data-logout-confirm>Ya, keluar</button>
         </div>
-    </header>
-
-    <main class="max-w-[1180px] w-full mx-auto px-4 sm:px-6 py-6">
-        @if(session('success'))
-            <div class="no-print banner banner-act mb-5" role="status">✓ {{ session('success') }}</div>
-        @endif
-        @if(session('error'))
-            <div class="no-print banner banner-rose mb-5" role="alert">{{ session('error') }}</div>
-        @endif
-        @if(session('info'))
-            <div class="no-print banner banner-act mb-5" role="status">{{ session('info') }}</div>
-        @endif
-        @if($errors->any())
-            <div class="no-print banner banner-rose mb-5" role="alert">
-                <div class="font-semibold mb-1">Harap periksa kembali input formulir:</div>
-                <ul class="list-disc list-inside text-[12px] space-y-0.5">
-                    @foreach($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </div>
-        @endif
-
-        @yield('content')
-    </main>
-
-    <footer class="no-print border-t" style="border-color: var(--line-soft);">
-        <div class="max-w-[1180px] mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-1.5 text-[11.5px] t-muted">
-            <span>Tracket v1.1, Sistem Manajemen Bengkel & Garansi</span>
-        </div>
-    </footer>
-
-    @stack('scripts')
+    </form>
+</dialog>
+<form id="logout-form" action="{{ route('logout') }}" method="POST" hidden>@csrf</form>
+<main class="app-main" id="main-content" tabindex="-1"><div class="app-content">
+    @if(session('success'))<div class="no-print banner banner-act mb-5" role="status">{{ session('success') }}</div>@endif
+    @if(session('error'))<div class="no-print banner banner-rose mb-5" role="alert">{{ session('error') }}</div>@endif
+    @if(session('info'))<div class="no-print banner banner-act mb-5" role="status">{{ session('info') }}</div>@endif
+    @if($errors->any())<div class="no-print banner banner-rose mb-5" role="alert"><div class="font-semibold mb-1">Periksa kembali formulir:</div><ul class="list-disc list-inside">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
+    @yield('content')
+    <footer class="app-footer no-print">Tracket · Bengkel servis & garansi</footer>
+</div></main>
+@stack('scripts')
 </body>
 </html>

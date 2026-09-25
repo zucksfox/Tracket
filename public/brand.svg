@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 48" role="img" aria-labelledby="logo-title">
+  <title id="logo-title">Tracket</title>
+  <g transform="translate(45 0)">
+    <rect x="1" y="1" width="46" height="46" rx="12" fill="#E3F3EA" stroke="#1E7A5C" stroke-width="2"/>
+    <path d="M12 12h24v6h-9v18h-6V18h-9z" fill="#1E7A5C"/>
+    <text x="62" y="31" fill="#1E7A5C" font-family="Inter, Arial, sans-serif" font-size="25" font-style="normal" font-weight="700">Tracket</text>
+  </g>
+</svg>

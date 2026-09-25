@@ -29,7 +29,7 @@
 
 Bengkel servis sering mengelola pekerjaan dengan kertas: nota karbon, catatan diagnosa di papan tulis, stok part di kepala teknisi. Ketika pelanggan menelepon untuk tanya *"servis saya sudah selesai?"*, orang di meja kasir harus menggali tumpukan nota.
 
-Tracket mengubah alur itu menjadi satu sistem dengan **bahasa visual kertas tanda terima & tinta biru**: nomor nota `SRV-YYYYMM-XXXX`, cap stempel status, dan portal pelacakan yang bisa dibuka pelanggan dari HP tanpa install apa pun.
+Tracket mengubah alur itu menjadi satu sistem dengan **antarmuka terang, aksen hijau dan font Inter**: nomor nota `SRV-YYYYMM-XXXX`, cap stempel status, dan portal pelacakan yang bisa dibuka pelanggan dari HP tanpa install apa pun.
 
 ---
 
@@ -56,6 +56,7 @@ Tracket mengubah alur itu menjadi satu sistem dengan **bahasa visual kertas tand
 <tr><td width="50%" valign="top">
 
 ### 🛡️ Garansi & Keuangan
+- Checkout tunai atau QR dengan konfirmasi manual; status LUNAS dan waktu bayar tercetak di faktur
 - Aktivasi garansi preset 30/60/90 hari dengan tanggal kedaluwarsa otomatis
 - **Hitung mundur sisa hari garansi** di portal pelanggan, berubah status sendiri saat habis
 - Tarif jasa selalu dibaca dari data tersimpan — tidak ada angka basi di faktur
@@ -66,7 +67,7 @@ Tracket mengubah alur itu menjadi satu sistem dengan **bahasa visual kertas tand
 ### 📱 Untuk Pelanggan
 - Buka **/track** dari HP, tanpa login, tanpa registrasi
 - Ketik nomor nota **atau** nomor WhatsApp — dua-duanya jalan
-- Timeline pengerjaan 5 tahap dengan titik bertinta biru
+- Timeline pengerjaan 5 tahap dengan penanda hijau
 - Nyalakan notifikasi WhatsApp bengkel dalam satu ketukan
 
 </td></tr>
@@ -94,8 +95,9 @@ php artisan key:generate
 #    DB_CONNECTION=sqlite   (lalu komentari baris DB_HOST dst)
 touch database/database.sqlite   # Windows PS: New-Item database\database.sqlite
 
-# 4. Tabel + data contoh
-php artisan migrate:fresh --seed
+# 4. Tabel + data contoh (instalasi baru; backup dahulu untuk database yang sudah berisi data)
+php artisan migrate
+php artisan db:seed
 
 # 5. Frontend (Tailwind 4 via Vite, tanpa CDN)
 npm install && npm run build
@@ -147,10 +149,10 @@ Ekstensi PHP: `pdo_mysql` (atau `pdo_sqlite`), `mbstring`, `openssl`, `fileinfo`
 
 | Peran | Email | Password | Bisa apa |
 |---|---|---|---|
-| **Admin / Kasir** | `admin@tracket.test` | `password` | Semuanya + master data + kelola akun |
-| **Teknisi** | `teknisi@tracket.test` | `password` | Pengerjaan, suku cadang, catatan teknis |
+| **Admin** | `admin@tracket.test` | `password` | Pengerjaan, master data, laporan dan kelola akun |
+| **Kasir** | `kasir@tracket.test` | `password` | Check-in, pembayaran tunai/QR manual, garansi dan cetak |
 
-> Halaman login juga punya tombol **akun demo 1-klik**. Menu kelola akun hanya muncul untuk admin — teknisi yang memaksa masuk `/technicians` ditolak dengan 403.
+> Halaman login punya tombol **demo Admin/Kasir**. Akun teknisi lama tetap kompatibel tetapi tidak dibuat pada demo baru. Seeder tidak mengganti kredensial atau stok lama, dan tidak menambah transaksi demo jika sudah ada servis. Tombol demo melewati kata sandi: aplikasi ini untuk demo lokal; nonaktifkan rute quick-login sebelum dipublikasikan. Panduan lengkap: [PANDUAN_DEMO.md](PANDUAN_DEMO.md).
 
 ---
 
@@ -170,9 +172,8 @@ Ekstensi PHP: `pdo_mysql` (atau `pdo_sqlite`), `mbstring`, `openssl`, `fileinfo`
 ╚════════════════════════════════════════════════════════╝
 ```
 
-**Bahasa desain: kertas tanda terima + tinta biru.** Bukan template dashboard generik —
-setiap status adalah "cap stempel", angka penting ditulis dalam mono seperti anotasi
-gambar teknik, dan border tipis meniru garis penggaris di kertas gambar.
+**Bahasa desain: dashboard terang dengan aksen hijau.** Sidebar tunggal, kartu metrik,
+badge status, angka tabular dan font Inter mengikuti `design.md`. Kode servis tetap monospace.
 
 </div>
 
@@ -237,29 +238,57 @@ Tracket/
 │   │   ├── CustomerController.php      # master pelanggan + lookup AJAX
 │   │   ├── SparepartController.php     # master part
 │   │   └── TrackingController.php      # portal publik tanpa login
-│   └── Models/
-│       ├── ServiceOrder.php            # status_meta (cap stempel), garansi, next_action
-│       ├── Customer.php / Sparepart.php / ServiceOrderPart.php / User.php
+│   ├── Models/
+│   │   ├── ServiceOrder.php            # status_meta (cap stempel), garansi, next_action
+│   │   ├── Customer.php / Sparepart.php / ServiceOrderPart.php / User.php
+│   │   └── Concerns/LogsActivity.php   # jejak audit (relasi polymorphic)
+│   ├── Contracts/
+│   │   └── ExportableReport.php        # antarmuka format ekspor
+│   ├── Exports/
+│   │   ├── ReportColumnMap.php         # susunan kolom (array 2 dimensi)
+│   │   ├── ReportExportService.php     # baca data bertahap (chunk / do-while)
+│   │   ├── ExportArchiver.php          # tulis & baca berkas di media penyimpanan
+│   │   ├── ReportExporterRegistry.php  # daftar format yang tersedia
+│   │   └── CsvReportExporter.php / JsonReportExporter.php  # 2 implementasi 1 antarmuka
+│   └── Actions/
+│       ├── DateRangeFilter.php         # validasi rentang tanggal laporan
+│       └── ReportQuery.php             # satu sumber filter untuk layar + ekspor
 ├── resources/views/
-│   ├── layouts/theme.blade.php         # design token: kertas & tinta biru (sumber tunggal)
+│   ├── layouts/theme.blade.php         # design token: terang, hijau, Inter
 │   ├── services/                       # daftar, detail, check-in, tanda terima, faktur
 │   ├── tracking/                       # portal publik: cari, timeline, multi-perangkat
-│   ├── technicians/ customers/ spareparts/ dashboard/ errors/
-├── database/migrations/                # 5 tabel + FK constraint + index
+│   ├── technicians/ customers/ spareparts/ dashboard/ reports/ errors/
+├── database/migrations/                # 6 tabel + FK constraint + index + soft delete
 ├── database/seeders/                   # data contoh realistis
-├── public/fonts/                       # IBM Plex self-hosted (demo jalan offline)
-└── tests/                              # php artisan test
+├── public/fonts/                       # Inter & font kode self-hosted (demo offline)
+├── tests/                              # 138 tes: php artisan test
+├── pint.json                           # pedoman gaya kode (PSR-12 / preset Laravel)
+├── RANCANGAN.md                        # rancangan, ERD, pemetaan ketentuan ujian
+└── design.md                           # sumber kebenaran sistem desain
 ```
 
-**5 tabel berelasi** — `users`, `customers`, `spareparts`, `service_orders`, `service_order_parts` — dengan foreign key (`cascadeOnDelete` untuk item, `nullOnDelete` untuk penanggung jawab) dan index pada kolom pencarian.
+**6 tabel berelasi** — `users`, `customers`, `spareparts`, `service_orders`, `service_order_parts`, `activity_logs` — dengan foreign key (`cascadeOnDelete` untuk item, `nullOnDelete` untuk penanggung jawab, `restrictOnDelete` untuk suku cadang yang sudah dipakai) dan index pada kolom pencarian.
+
+## 📤 Ekspor Laporan ke Berkas
+
+Halaman **Laporan** (admin) dapat menyimpan laporan periode terpilih menjadi berkas nyata di server, lalu mengunduhnya kembali:
+
+- Format **CSV** (siap dibuka di Excel, BOM UTF-8, pemisah titik koma) dan **JSON** (satu objek per baris dengan nama kolom sebagai kunci).
+- Berkas disimpan di `storage/app/private/exports/` dengan cap waktu pada namanya, dan daftar arsipnya tampil di halaman Laporan untuk diunduh ulang.
+- Isi berkas selalu identik dengan tabel di layar karena keduanya membaca filter dari `App\Actions\ReportQuery` yang sama.
+- Rincian teknis: `RANCANGAN.md` bagian g–h.
 
 ---
 
 ## 🧪 Menjalankan Test
 
 ```bash
-php artisan test
+php artisan test          # 138 tes, 499 asersi
+php vendor/bin/pint --test # pemeriksaan gaya kode (PSR-12)
 ```
+
+Rancangan, diagram relasi basis data, dan pemetaan setiap ketentuan ujian
+praktik ke kode ada di [RANCANGAN.md](RANCANGAN.md).
 
 ---
 
@@ -279,6 +308,6 @@ php artisan test
 <div align="center">
 
 **Tracket** — nota kertas yang belajar jadi sistem.
-`SRV-202609-0001` · dibangun dengan Laravel · desain kertas & tinta biru
+`SRV-202609-0001` · dibangun dengan Laravel · operasional bengkel dalam satu aplikasi
 
 </div>
