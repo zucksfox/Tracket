@@ -12,23 +12,28 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Ambil kode
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Siapkan PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
-          tools: pint
+          coverage: none
 
+      - name: Pasang dependensi
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      # Memakai biner dari vendor/, bukan pint global dari setup-php, supaya
+      # versi yang diperiksa sama persis dengan versi di composer.lock.
       - name: Periksa gaya kode
-        run: pint --test
+        run: php vendor/bin/pint --test
 
   test:
     name: PHPUnit
     runs-on: ubuntu-latest
     steps:
       - name: Ambil kode
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Siapkan PHP
         uses: shivammathur/setup-php@v2
@@ -37,11 +42,23 @@ jobs:
           extensions: mbstring, pdo_sqlite
           coverage: none
 
-      - name: Pasang dependensi
+      - name: Pasang dependensi PHP
         run: composer install --no-interaction --prefer-dist --no-progress
 
-      - name: Salin berkas lingkungan
+      - name: Siapkan berkas lingkungan
         run: cp .env.example .env && php artisan key:generate
+
+      # public/build tidak ikut ke repositori (ada di .gitignore), padahal
+      # blade memanggil @vite sehingga manifest Vite wajib ada. Bangun aset
+      # lebih dahulu, sama seperti saat deploy.
+      - name: Siapkan Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Bangun aset frontend
+        run: npm ci && npm run build
 
       - name: Jalankan pengujian
         run: php artisan test
